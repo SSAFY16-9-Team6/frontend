@@ -1,41 +1,101 @@
 <!-- src/views/MapView.vue -->
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { PLACES } from '../data/mockData'
-import { CATEGORIES } from '../data/constants' // constants.ts에서 카테고리 테마 색상 및 정의 가져오기
+import { computed, onMounted, ref } from 'vue'
+import { CATEGORIES, DISTRICTS } from '../data/constants'
 import type { Place } from '../types'
 import NaverMap from '../components/NaverMap.vue'
 
-const selectedCategoryName = ref('전체')
+const selectedCategoryId = ref('all')
 const activePlaceId = ref<string | null>(null)
+const allPlaces = ref<Place[]>([])
+const isLoading = ref(false)
+const errorMessage = ref('')
 
-// 카테고리별 필터링된 장소 데이터
+const selectedCategoryName = computed(() => {
+  if (selectedCategoryId.value === 'all') return '전체'
+  return CATEGORIES.find((cat) => cat.id === selectedCategoryId.value)?.name ?? '전체'
+})
+
 const filteredPlaces = computed(() => {
-  return PLACES.filter(place => {
-    return selectedCategoryName.value === '전체' || place.category === selectedCategoryName.value
-  })
+  if (selectedCategoryId.value === 'all') return allPlaces.value
+  return allPlaces.value.filter((place) => place.categoryId === selectedCategoryId.value)
 })
 
-// 현재 선택된 활성 장소 정보 객체
 const activePlace = computed(() => {
-  return PLACES.find(place => place.id === activePlaceId.value) || null
+  return allPlaces.value.find((place) => place.id === activePlaceId.value) || null
 })
 
-// 장소의 카테고리 이름을 바탕으로 constants.ts에 정의된 색상 클래스를 추출하는 헬퍼 함수
 function getCategoryColorClass(categoryName: string): string {
-  const matched = CATEGORIES.find(cat => cat.name === categoryName)
-  return matched ? matched.color : 'bg-[#0F1F4B]' // 매칭 안 될 시 기본값 Deep Navy
+  const matched = CATEGORIES.find((cat) => cat.name === categoryName)
+  return matched ? matched.color : 'bg-[#0F1F4B]'
 }
 
-// 핀 클릭 및 리스트 클릭 처리
+function getImageUrl(image: string | undefined): string {
+  if (!image) {
+    return 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=300&q=80'
+  }
+
+  return /^https?:\/\//.test(image)
+    ? image
+    : `https://images.unsplash.com/${image}?auto=format&fit=crop&w=300&q=80`
+}
+
+function mapPlace(item: any, categoryId: string): Place {
+  const categoryName = CATEGORIES.find((cat) => cat.id === categoryId)?.name ?? '기타'
+  const region = DISTRICTS.find((district) => district.code === item.lDongSignguCd)?.name ?? '기타'
+
+  return {
+    id: item.contentId,
+    name: item.title,
+    category: categoryName,
+    categoryId,
+    region,
+    address: item.address,
+    description: item.title,
+    image: item.thumbnail || '',
+    mapx: item.mapX,
+    mapy: item.mapY
+  }
+}
+
+async function loadPlaces() {
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const responses = await Promise.all(
+      CATEGORIES.map(async (category) => {
+        const response = await fetch(`https://backend-xxf5.onrender.com/api/v1/categories/${category.id}/places?page=1&size=100`)
+        if (!response.ok) {
+          throw new Error(`${category.name} 데이터를 불러오지 못했습니다.`)
+        }
+
+        const result = await response.json()
+        const items = result?.data?.items ?? []
+        return items.map((item: any) => mapPlace(item, category.id))
+      })
+    )
+
+    allPlaces.value = responses.flat()
+  } catch (error) {
+    console.error(error)
+    errorMessage.value = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
 function handlePlaceSelect(placeId: string) {
   activePlaceId.value = placeId
 }
 
-// 상세 정보 카드 닫기
 function closeDetailCard() {
   activePlaceId.value = null
 }
+
+onMounted(() => {
+  loadPlaces()
+})
 </script>
 
 <template>
@@ -54,10 +114,10 @@ function closeDetailCard() {
         <!-- 전체 필터 버튼 -->
         <button
           type="button"
-          @click="selectedCategoryName = '전체'"
+          @click="selectedCategoryId = 'all'"
           :class="[
             'px-4 py-2 rounded-full text-xs font-semibold transition border',
-            selectedCategoryName === '전체'
+            selectedCategoryId === 'all'
               ? 'bg-[#0F1F4B] text-white border-[#0F1F4B]'
               : 'bg-white text-[#4F5B72] border-[#E6D8C4] hover:bg-[#F4E7D3]/40'
           ]"
@@ -65,15 +125,14 @@ function closeDetailCard() {
           전체
         </button>
 
-        <!-- 개별 카테고리 버튼들 (비활성화 상태 시 회색 글자색 text-[#4F5B72] 유지) -->
         <button
           v-for="cat in CATEGORIES"
           :key="cat.id"
           type="button"
-          @click="selectedCategoryName = cat.name"
+          @click="selectedCategoryId = cat.id"
           :class="[
             'px-4 py-2 rounded-full text-xs font-semibold transition border',
-            selectedCategoryName === cat.name
+            selectedCategoryId === cat.id
               ? [cat.color, 'text-white border-transparent']
               : 'bg-white text-[#4F5B72] border-[#E6D8C4] hover:bg-[#F4E7D3]/40'
           ]"
@@ -101,7 +160,13 @@ function closeDetailCard() {
         </div>
         
         <div class="flex-1 overflow-y-auto p-4 space-y-3">
-          <div v-if="filteredPlaces.length === 0" class="h-full flex items-center justify-center text-sm text-[#8A94A6]">
+          <div v-if="isLoading" class="h-full flex items-center justify-center text-sm text-[#8A94A6]">
+            장소 정보를 불러오는 중입니다...
+          </div>
+          <div v-else-if="errorMessage" class="h-full flex items-center justify-center text-sm text-[#8A94A6]">
+            {{ errorMessage }}
+          </div>
+          <div v-else-if="filteredPlaces.length === 0" class="h-full flex items-center justify-center text-sm text-[#8A94A6]">
             조건에 맞는 장소가 없습니다.
           </div>
           <div
@@ -156,7 +221,7 @@ function closeDetailCard() {
         <!-- 1. 이미지 영역 -->
         <div class="w-24 h-24 rounded-2xl overflow-hidden shrink-0 bg-[#F9F1E5] border border-[#E6D8C4]/40">
           <img 
-            :src="`https://images.unsplash.com/${activePlace.image}?auto=format&fit=crop&w=300&q=80`" 
+            :src="getImageUrl(activePlace.image)"
             :alt="activePlace.name"
             class="w-full h-full object-cover"
           />

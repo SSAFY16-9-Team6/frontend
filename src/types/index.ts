@@ -14,6 +14,7 @@ export interface Place {
   id: string
   name: string
   category: string
+  categoryId?: string
   region: string
   address: string
   description: string
