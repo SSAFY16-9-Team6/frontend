@@ -44,18 +44,5 @@ function selectTab(tab: string) {
         {{ tab.label }}
       </button>
     </div>
-
-    <!-- 글쓰기 버튼 -->
-    <div>
-      <button 
-        type="button"
-        class="bg-[#FF4D2D] hover:bg-[#E03D1E] active:scale-95 text-white text-sm font-bold px-5 py-2.5 rounded-full shadow-md shadow-[#FF4D2D]/20 transition flex items-center gap-1.5"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-        </svg>
-        글 쓰기
-      </button>
-    </div>
   </nav>
 </template>
