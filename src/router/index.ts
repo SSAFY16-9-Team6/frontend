@@ -2,7 +2,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import BoardView from '../views/BoardView.vue'
-import PostDetailView from '../views/BoardDetailView.vue'
+import BoardDetailView from '../views/BoardDetailView.vue'
+import BoardUpdateView from '../views/BoardUpdateView.vue'
 
 const routes = [
   {
@@ -18,8 +19,14 @@ const routes = [
   {
     path: '/board/:id',
     name: 'post-detail',
-    component: PostDetailView,
+    component: BoardDetailView,
     props: true // URL 파라미터(:id)를 컴포넌트의 props로 바로 전달
+  },
+  {
+    path: '/board/edit/:id',
+    name: 'post-edit',
+    component: BoardUpdateView,
+    props: true
   }
 ]
 
