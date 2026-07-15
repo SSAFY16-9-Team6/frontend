@@ -11,6 +11,9 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const categoryName = ref('관광지')
 const totalCount = ref(0)
+const pageSize = 20
+const currentPage = ref(1)
+const totalPages = ref(1)
 
 function mapPlace(item: any): Place {
   const region = DISTRICTS.find((district) => district.code === item.lDongSignguCd)?.name ?? '기타'
@@ -33,7 +36,7 @@ async function loadPlaces() {
   errorMessage.value = ''
 
   try {
-    const response = await fetch('https://backend-xxf5.onrender.com/api/v1/categories/12/places?page=1&size=20')
+    const response = await fetch(`https://backend-xxf5.onrender.com/api/v1/categories/12/places?page=${currentPage.value}&size=${pageSize}`)
     if (!response.ok) {
       throw new Error('관광지 데이터를 불러오지 못했습니다.')
     }
@@ -44,6 +47,7 @@ async function loadPlaces() {
     places.value = items.map(mapPlace)
     categoryName.value = result?.data?.categoryName ?? '관광지'
     totalCount.value = result?.data?.totalCount ?? items.length
+    totalPages.value = Math.max(1, Math.ceil(totalCount.value / pageSize))
   } catch (error) {
     console.error(error)
     errorMessage.value = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
@@ -59,6 +63,13 @@ const filteredPlaces = computed(() => {
 
 function selectDistrict(district: string) {
   selectedDistrict.value = district
+  currentPage.value = 1
+}
+
+function changePage(page: number) {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  loadPlaces()
 }
 
 onMounted(() => {
@@ -121,8 +132,41 @@ onMounted(() => {
     </div>
 
     <!-- Places Grid -->
-    <div v-else-if="filteredPlaces.length > 0" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div v-else-if="filteredPlaces.length > 0" class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
       <PlaceCard v-for="place in filteredPlaces" :key="place.id" :place="place" />
+    </div>
+
+    <div v-if="totalPages > 1" class="flex flex-wrap items-center justify-center gap-2 pt-2">
+      <button
+        type="button"
+        class="px-3 py-2 text-sm font-semibold rounded-full border border-[#E6D8C4] bg-white text-[#4F5B72] disabled:opacity-50"
+        :disabled="currentPage === 1"
+        @click="changePage(currentPage - 1)"
+      >
+        이전
+      </button>
+
+      <button
+        v-for="page in totalPages"
+        :key="page"
+        type="button"
+        class="px-3 py-2 text-sm font-semibold rounded-full border transition-all"
+        :class="currentPage === page
+          ? 'bg-[#FF4D2D] text-white border-[#FF4D2D]'
+          : 'bg-white text-[#4F5B72] border-[#E6D8C4] hover:bg-[#F4E7D3]/40'"
+        @click="changePage(page)"
+      >
+        {{ page }}
+      </button>
+
+      <button
+        type="button"
+        class="px-3 py-2 text-sm font-semibold rounded-full border border-[#E6D8C4] bg-white text-[#4F5B72] disabled:opacity-50"
+        :disabled="currentPage === totalPages"
+        @click="changePage(currentPage + 1)"
+      >
+        다음
+      </button>
     </div>
 
     <!-- No Items Fallback -->

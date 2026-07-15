@@ -63,20 +63,33 @@ async function loadPlaces() {
   errorMessage.value = ''
 
   try {
-    const responses = await Promise.all(
+    const categoryResults = await Promise.all(
       CATEGORIES.map(async (category) => {
-        const response = await fetch(`https://backend-xxf5.onrender.com/api/v1/categories/${category.id}/places?page=1&size=100`)
-        if (!response.ok) {
-          throw new Error(`${category.name} 데이터를 불러오지 못했습니다.`)
+        const allItems: any[] = []
+        let page = 1
+        let hasMore = true
+
+        while (hasMore) {
+          const response = await fetch(`https://backend-xxf5.onrender.com/api/v1/categories/${category.id}/places?page=${page}&size=100`)
+          if (!response.ok) {
+            throw new Error(`${category.name} 데이터를 불러오지 못했습니다.`)
+          }
+
+          const result = await response.json()
+          const items = result?.data?.items ?? []
+          allItems.push(...items)
+
+          const totalCount = result?.data?.totalCount ?? 0
+          const currentCount = allItems.length
+          hasMore = currentCount < totalCount && items.length > 0
+          page += 1
         }
 
-        const result = await response.json()
-        const items = result?.data?.items ?? []
-        return items.map((item: any) => mapPlace(item, category.id))
+        return allItems.map((item: any) => mapPlace(item, category.id))
       })
     )
 
-    allPlaces.value = responses.flat()
+    allPlaces.value = categoryResults.flat()
   } catch (error) {
     console.error(error)
     errorMessage.value = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
