@@ -8,7 +8,7 @@ defineProps<{
 
 <template>
   <div class="relative w-full">
-    <!-- 검색창 컨테이너: 피그마 보드 카드 디자인과 일치하는 둥근 모서리 및 베이지 테두리 적용 -->
+    <!-- 검색창 컨테이너: 둥근 모서리 및 베이지 테두리 적용 -->
     <div 
       class="flex h-12 w-full items-center gap-3 rounded-[20px] border border-[#E6D8C4] bg-white px-5 transition-all duration-200 focus-within:border-[#0F1F4B] focus-within:ring-1 focus-within:ring-[#0F1F4B]"
     >
