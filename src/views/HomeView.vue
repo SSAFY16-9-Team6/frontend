@@ -134,7 +134,11 @@ if (!categoryList.some(c => c.id === '39')) {
 
 // 카테고리 클릭 핸들러 (나중에 화면 연결할 수 있도록 정의)
 function goCategory(categoryId: string) {
-  console.log(`카테고리 ID: ${categoryId} 화면으로 이동 예정`)
+  // query parameter를 담아 tourism 화면으로 이동합니다.
+  router.push({
+    name: 'tourism',
+    query: { category: categoryId }
+  })
 }
 </script>
 

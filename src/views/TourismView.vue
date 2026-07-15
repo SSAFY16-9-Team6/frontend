@@ -1,17 +1,36 @@
+<!-- src/views/TourismView.vue -->
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import PlaceCard from '../components/PlaceCard.vue'
 import Tag from '../components/ui/Tag.vue'
 import { CATEGORIES, DISTRICTS } from '../data/constants'
 import type { Place } from '../types'
 
+const route = useRoute()
+
 const districts = ['전체', ...DISTRICTS.map((district) => district.name)]
 const selectedDistrict = ref('전체')
-const selectedCategoryId = ref(CATEGORIES[0]?.id ?? '12')
+
+// URL 쿼리에 category가 있으면 그것을 사용하고, 없으면 카테고리의 첫 번째 ID를 사용
+const getInitialCategoryId = () => {
+  const queryCat = route.query.category as string
+  if (queryCat && CATEGORIES.some(cat => cat.id === queryCat)) {
+    return queryCat
+  }
+  return CATEGORIES[0]?.id ?? '12'
+}
+
+const selectedCategoryId = ref(getInitialCategoryId())
 const places = ref<Place[]>([])
 const isLoading = ref(false)
 const errorMessage = ref('')
-const categoryName = ref(CATEGORIES[0]?.name ?? '관광지')
+
+// 선택된 카테고리 이름을 반응형으로 추적
+const categoryName = computed(() => {
+  return CATEGORIES.find((cat) => cat.id === selectedCategoryId.value)?.name ?? '관광지'
+})
+
 const totalCount = ref(0)
 const pageSize = 20
 const currentPage = ref(1)
@@ -47,10 +66,8 @@ async function loadPlaces() {
 
     const result = await response.json()
     const items = result?.data?.items ?? []
-    const fallbackName = CATEGORIES.find((cat) => cat.id === selectedCategoryId.value)?.name ?? '관광지'
 
     places.value = items.map(mapPlace)
-    categoryName.value = result?.data?.categoryName ?? fallbackName
     totalCount.value = result?.data?.totalCount ?? items.length
     totalPages.value = Math.max(1, Math.ceil(totalCount.value / pageSize))
   } catch (error) {
@@ -60,6 +77,20 @@ async function loadPlaces() {
     isLoading.value = false
   }
 }
+
+// 홈화면에서 다른 카테고리를 눌렀을 때를 대비해 라우터 파라미터 변화 감지
+watch(
+  () => route.query.category,
+  (newCategory) => {
+    const targetCategory = (newCategory as string) || (CATEGORIES[0]?.id ?? '12')
+    if (selectedCategoryId.value !== targetCategory) {
+      selectedCategoryId.value = targetCategory
+      selectedDistrict.value = '전체'
+      currentPage.value = 1
+      loadPlaces()
+    }
+  }
+)
 
 const maxVisiblePages = 7
 
@@ -73,7 +104,6 @@ const visiblePages = computed(() => {
   const current = currentPage.value
   const size = Math.min(maxVisiblePages, total)
 
-  // 선택 페이지를 가운데에 두고, 양 끝에서만 범위를 밀어 맞춤
   let start = current - Math.floor(size / 2)
   let end = start + size - 1
 
@@ -144,7 +174,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Category Filter Tags (constants.ts 의 CATEGORIES 와 연계) -->
+    <!-- Category Filter Tags -->
     <div class="flex flex-wrap gap-2.5 py-1">
       <button
         v-for="category in CATEGORIES"
@@ -162,7 +192,7 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- District Filter Tags (constants.ts 의 DISTRICTS 와 연계) -->
+    <!-- District Filter Tags -->
     <div class="flex flex-wrap gap-2.5 py-1">
       <button
         v-for="district in districts"
