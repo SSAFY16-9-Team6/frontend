@@ -11,6 +11,7 @@ const currentTab = computed(() => {
   if (route.path.startsWith('/tourism')) return 'tourism'
   if (route.path.startsWith('/map')) return 'map'
   if (route.path.startsWith('/board')) return 'board'
+  if (route.path.startsWith('/stats')) return 'stats'
   return 'home'
 })
 
