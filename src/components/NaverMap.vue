@@ -171,7 +171,7 @@ function createMarkerHtml(place: Place, isActive: boolean): string {
   const markerColor = getMarkerHexColor(place.category)
   const svgPath = getCategorySvgPath(place.category)
   
-  // 크기를 키우고 테두리에 그림자 효과를 입혀 시인성 및 가시성을 높였습니다.
+  // 크기를 키우고 테두리에 그림자 효과를 입혀 시인성 및 가시성을 높임
   const markerSize = isActive ? 42 : 34
   const borderThickness = isActive ? 3 : 2
   const borderColor = isActive ? '#FF4D2D' : '#FFFFFF'

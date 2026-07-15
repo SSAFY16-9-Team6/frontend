@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
-// 사용자가 브라우저 주소를 바꾸거나 새로고침해도 현재 경로를 실시간으로 추적하여 탭을 켜줍니다.
+// 사용자가 브라우저 주소를 바꾸거나 새로고침해도 현재 경로를 실시간으로 추적하여 탭을 켬
 const currentTab = computed(() => {
     if (route.path === '/') return 'home'
     if (route.path.startsWith('/tourism')) return 'tourism'
