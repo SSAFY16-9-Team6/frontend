@@ -1,21 +1,80 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import PlaceCard from '../components/PlaceCard.vue'
-import { PLACES } from '../data/mockData'
 import { DISTRICTS } from '../data/constants'
+import type { Place } from '../types'
 
-// constants.ts에서 전달받은 공식 구 데이터에 맞춘 태그 및 필터 목록
-const districts = ['전체', ...DISTRICTS.map(d => d.name)]
+const districts = ['전체', ...DISTRICTS.map((district) => district.name)]
 const selectedDistrict = ref('전체')
+const places = ref<Place[]>([])
+const isLoading = ref(false)
+const errorMessage = ref('')
+const categoryName = ref('관광지')
+const totalCount = ref(0)
+const pageSize = 20
+const currentPage = ref(1)
+const totalPages = ref(1)
+
+function mapPlace(item: any): Place {
+  const region = DISTRICTS.find((district) => district.code === item.lDongSignguCd)?.name ?? '기타'
+
+  return {
+    id: item.contentId,
+    name: item.title,
+    category: item.categoryName ?? categoryName.value,
+    region,
+    address: item.address,
+    description: item.title,
+    image: item.thumbnail || '',
+    mapx: item.mapX,
+    mapy: item.mapY
+  }
+}
+
+async function loadPlaces() {
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await fetch(`https://backend-xxf5.onrender.com/api/v1/categories/12/places?page=${currentPage.value}&size=${pageSize}`)
+    if (!response.ok) {
+      throw new Error('관광지 데이터를 불러오지 못했습니다.')
+    }
+
+    const result = await response.json()
+    const items = result?.data?.items ?? []
+
+    places.value = items.map(mapPlace)
+    categoryName.value = result?.data?.categoryName ?? '관광지'
+    totalCount.value = result?.data?.totalCount ?? items.length
+    totalPages.value = Math.max(1, Math.ceil(totalCount.value / pageSize))
+  } catch (error) {
+    console.error(error)
+    errorMessage.value = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const filteredPlaces = computed(() => {
-  if (selectedDistrict.value === '전체') return PLACES
-  return PLACES.filter((place) => place.region === selectedDistrict.value)
+  if (selectedDistrict.value === '전체') return places.value
+  return places.value.filter((place) => place.region === selectedDistrict.value)
 })
 
 function selectDistrict(district: string) {
   selectedDistrict.value = district
+  currentPage.value = 1
 }
+
+function changePage(page: number) {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  loadPlaces()
+}
+
+onMounted(() => {
+  loadPlaces()
+})
 </script>
 
 <template>
@@ -43,8 +102,8 @@ function selectDistrict(district: string) {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </div>
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">관광지</h1>
-        <p class="text-white/80 text-sm mt-1.5 font-medium">142곳 · 해운대 · 자갈치 · 감천 등 명소</p>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">{{ categoryName }}</h1>
+        <p class="text-white/80 text-sm mt-1.5 font-medium">{{ totalCount }}곳 · 부산의 대표 관광지를 확인해보세요</p>
       </div>
     </div>
 
@@ -64,13 +123,54 @@ function selectDistrict(district: string) {
       </button>
     </div>
 
+    <div v-if="isLoading" class="text-center py-20 bg-white rounded-[32px] border border-[#E6D8C4] text-[#8A94A6]">
+      <p class="font-medium">관광지 정보를 불러오는 중입니다...</p>
+    </div>
+
+    <div v-else-if="errorMessage" class="text-center py-20 bg-white rounded-[32px] border border-[#E6D8C4] text-[#8A94A6]">
+      <p class="font-medium">{{ errorMessage }}</p>
+    </div>
+
     <!-- Places Grid -->
-    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div v-else-if="filteredPlaces.length > 0" class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
       <PlaceCard v-for="place in filteredPlaces" :key="place.id" :place="place" />
     </div>
 
+    <div v-if="totalPages > 1" class="flex flex-wrap items-center justify-center gap-2 pt-2">
+      <button
+        type="button"
+        class="px-3 py-2 text-sm font-semibold rounded-full border border-[#E6D8C4] bg-white text-[#4F5B72] disabled:opacity-50"
+        :disabled="currentPage === 1"
+        @click="changePage(currentPage - 1)"
+      >
+        이전
+      </button>
+
+      <button
+        v-for="page in totalPages"
+        :key="page"
+        type="button"
+        class="px-3 py-2 text-sm font-semibold rounded-full border transition-all"
+        :class="currentPage === page
+          ? 'bg-[#FF4D2D] text-white border-[#FF4D2D]'
+          : 'bg-white text-[#4F5B72] border-[#E6D8C4] hover:bg-[#F4E7D3]/40'"
+        @click="changePage(page)"
+      >
+        {{ page }}
+      </button>
+
+      <button
+        type="button"
+        class="px-3 py-2 text-sm font-semibold rounded-full border border-[#E6D8C4] bg-white text-[#4F5B72] disabled:opacity-50"
+        :disabled="currentPage === totalPages"
+        @click="changePage(currentPage + 1)"
+      >
+        다음
+      </button>
+    </div>
+
     <!-- No Items Fallback -->
-    <div v-if="filteredPlaces.length === 0" class="text-center py-20 bg-white rounded-[32px] border border-[#E6D8C4] text-[#8A94A6]">
+    <div v-else class="text-center py-20 bg-white rounded-[32px] border border-[#E6D8C4] text-[#8A94A6]">
       <svg class="w-12 h-12 mx-auto text-[#C0C8D6] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
