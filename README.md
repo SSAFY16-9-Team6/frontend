@@ -1,5 +1,22 @@
-# Vue 3 + TypeScript + Vite
+### 📌 Git 커밋 컨벤션
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+| 타입 (Type) | 설명 (Description) | 예시 (Example) |
+| :--- | :--- | :--- |
+| **Feat** | 새로운 기능 추가 | `Feat: 소셜 로그인 기능 구현` |
+| **Fix** | 버그 수정 | `Fix: 로그인 세션 만료 오류 수정` |
+| **Docs** | 문서 수정 (README.md 등) | `Docs: 설치 방법 안내 추가` |
+| **Style** | 코드 포맷팅, 세미콜론 누락 등 (코드 동작에 영향 없음) | `Style: 코드 인덴트 정렬 및 포맷팅` |
+| **Refactor** | 코드 리팩토링 (기능 변경 없음) | `Refactor: 중복 로그인 로직 함수화` |
+| **Test** | 테스트 코드 추가/수정 | `Test: 인증 관련 유닛 테스트 작성` |
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+---
+
+### 📝 PR(Pull Request) 제목 규칙
+
+PR을 작성할 때는 아래와 같이 **`[타입] 작업 내용`** 형식을 사용합니다.
+
+* **규칙:** `[타입] 작업 내용`
+* **예시:** 
+  * `[Feat] 소셜 로그인 기능 추가`
+  * `[Fix] 로그인 페이지 UI 깨짐 현상 수정`
+  * `[Docs] API 명세서 문서 업데이트`
