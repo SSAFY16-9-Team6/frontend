@@ -1,7 +1,7 @@
 <!-- src/components/NaverMap.vue -->
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
-import { CATEGORIES } from '../data/constants' // 1. 상수 데이터 임포트
+import { CATEGORIES } from '../data/constants'
 import type { Place } from '../types'
 
 const props = defineProps<{
