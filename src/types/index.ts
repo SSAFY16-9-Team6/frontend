@@ -18,6 +18,8 @@ export interface Place {
   address: string
   description: string
   image: string
+  mapx: string
+  mapy: string
 }
 
 export interface Post {

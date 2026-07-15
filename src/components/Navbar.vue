@@ -1,7 +1,18 @@
+<!-- src/components/Navbar.vue -->
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
-const currentTab = ref('home')
+const route = useRoute()
+
+// 사용자가 브라우저 주소를 바꾸거나 새로고침해도 현재 경로를 실시간으로 추적하여 탭을 켜줍니다.
+const currentTab = computed(() => {
+  if (route.path === '/') return 'home'
+  if (route.path.startsWith('/tourism')) return 'tourism'
+  if (route.path.startsWith('/map')) return 'map'
+  if (route.path.startsWith('/board')) return 'board'
+  return 'home'
+})
 
 const tabs = [
   { key: 'home', label: '홈' },
@@ -16,7 +27,6 @@ const emit = defineEmits<{
 }>()
 
 function selectTab(tab: string) {
-  currentTab.value = tab
   emit('change-tab', tab)
 }
 </script>
