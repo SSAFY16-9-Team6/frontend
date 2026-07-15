@@ -5,12 +5,24 @@ import BoardView from '../views/BoardView.vue'
 import BoardDetailView from '../views/BoardDetailView.vue'
 import BoardUpdateView from '../views/BoardUpdateView.vue'
 import BoardCreateView from '../views/BoardCreateView.vue'
+import TourismView from '../views/TourismView.vue'
+import MapView from '../views/MapView.vue'
 
 const routes = [
   {
     path: '/',
     name: 'home',
     component: HomeView
+  },
+  {
+    path: '/tourism',
+    name: 'tourism',
+    component: TourismView
+  },
+  {
+    path: '/map',
+    name: 'map',
+    component: MapView
   },
   {
     path: '/board',

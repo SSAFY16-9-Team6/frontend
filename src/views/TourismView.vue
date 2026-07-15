@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import Footer from '../components/Footer.vue'
 import PlaceCard from '../components/PlaceCard.vue'
 import { PLACES } from '../data/mockData'
 import { DISTRICTS } from '../data/constants'
@@ -77,7 +76,5 @@ function selectDistrict(district: string) {
       </svg>
       <p class="font-medium">선택하신 지역에 등록된 명소가 없습니다.</p>
     </div>
-
-    <Footer />
   </div>
 </template>

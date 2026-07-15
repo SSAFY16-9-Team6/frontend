@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Footer from '../components/Footer.vue'
 import PlaceCard from '../components/PlaceCard.vue'
 import Chatbot from '../components/Chatbot.vue'
 import { FEATURED_PLACES, EVENTS } from '../data/mockData'
@@ -29,6 +28,5 @@ import { FEATURED_PLACES, EVENTS } from '../data/mockData'
         <Chatbot />
       </div>
     </section>
-    <Footer />
   </div>
 </template>
