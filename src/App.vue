@@ -25,10 +25,11 @@ function onChangeTab(tabKey: string) {
 </script>
 
 <template>
-    <div class="min-h-screen bg-[#F9F1E5]">
-        <!-- 네비게이션 바가 내뿜는 change-tab 이벤트를 받아 라우팅 처리 -->
+    <div class="min-h-screen flex flex-col bg-[#F9F1E5]">
         <Navbar @change-tab="onChangeTab" />
-        <RouterView />
+        <main class="flex-1">
+            <RouterView />
+        </main>
         <Footer />
         <Chatbot />
     </div>
