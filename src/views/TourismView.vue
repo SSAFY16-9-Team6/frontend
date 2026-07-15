@@ -36,6 +36,23 @@ const pageSize = 20
 const currentPage = ref(1)
 const totalPages = ref(1)
 
+// 각 카테고리 ID별 최적화된 고화질 이미지 매핑 객체
+const categoryImages: Record<string, string> = {
+  '12': 'https://images.unsplash.com/photo-1546874177-9e664107314e?auto=format&fit=crop&w=1600&q=80', // 관광지 (부산 바다 감성)
+  '14': 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1600&q=80', // 문화시설 (도서관/전시)
+  '15': 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=80', // 축제공연행사 (페스티벌 콘서트)
+  '25': 'https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?auto=format&fit=crop&w=1600&q=80', // 여행코스 (지도/드라이브)
+  '28': 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1600&q=80', // 레포츠 (바다 서핑)
+  '32': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80', // 숙박 (호텔/펜션)
+  '38': 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80', // 쇼핑 (쇼핑거리)
+  '39': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1600&q=80', // 음식점 (식당/요리)
+}
+
+// 선택된 카테고리에 맞는 이미지를 가져오는 computed
+const currentBannerImage = computed(() => {
+  return categoryImages[selectedCategoryId.value] || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80'
+})
+
 function mapPlace(item: any): Place {
   const region = DISTRICTS.find((district) => district.code === item.lDongSignguCd)?.name ?? '기타'
 
@@ -158,9 +175,9 @@ onMounted(() => {
     <!-- Hero Banner -->
     <div class="relative rounded-[32px] overflow-hidden h-[240px] shadow-sm">
       <img 
-        src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80" 
-        alt="Haeundae Sea" 
-        class="absolute inset-0 w-full h-full object-cover"
+        :src="currentBannerImage" 
+        :alt="categoryName" 
+        class="absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-in-out"
       />
       <div class="absolute inset-0 bg-gradient-to-r from-black/65 via-black/45 to-transparent flex flex-col justify-end p-8 sm:p-10">
         <div class="w-12 h-12 rounded-[16px] bg-[#FF4D2D] flex items-center justify-center text-white mb-3 shadow-md">
