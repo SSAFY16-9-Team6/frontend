@@ -21,13 +21,14 @@ export interface Place {
 }
 
 export interface Post {
-  id: string
+  postId: number
   title: string
   content: string
-  category: string
+  categoryId: string
   author: string
-  likes: number
-  image: string
+  createdAt: string
+  likeCount: number
+  views: number
 }
 
 export interface ChatMsg {

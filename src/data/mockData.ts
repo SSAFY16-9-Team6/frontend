@@ -93,23 +93,25 @@ export const EVENTS = [
 
 export const INIT_POSTS: Post[] = [
   {
-    id: 'p1',
+    postId: 1,
     title: '바다 보면서 힐링했어요',
     content: '해운대에서 맛있는 음식도 먹고 산책도 했습니다.',
-    category: 'nature',
-    author: '민지',
-    likes: 12,
-    image: 'photo-1500375592092-40eb2168fd21',
+    categoryId: '12', // 관광지 카테고리 (id: '12')
+    author: '익명',
+    createdAt: '2026-07-15T10:00:00Z',
+    likeCount: 12,
+    views: 45
   },
   {
-    id: 'p2',
+    postId: 2,
     title: '감천문화마을 너무 예뻤어요',
-    content: '사진 찍기 좋은 장소였어요.',
-    category: 'culture',
-    author: '준호',
-    likes: 8,
-    image: 'photo-1519046904884-53103b34b206',
-  },
+    content: '사진 찍기 좋은 장소였어요. 알록달록한 집들이 아주 인상 깊었습니다.',
+    categoryId: '14', // 문화시설 카테고리 (id: '14')
+    author: '익명',
+    createdAt: '2026-07-14T08:30:00Z',
+    likeCount: 8,
+    views: 32
+  }
 ]
 
 export const CHATBOT_RESPONSES: ChatMsg[] = [
