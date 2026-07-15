@@ -1,10 +1,21 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { Place } from '../types'
 
-defineProps<{
+const props = defineProps<{
   place: Place
 }>()
+
+const imageSrc = computed(() => {
+  const image = props.place.image
+  if (!image) {
+    return 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80'
+  }
+
+  return /^https?:\/\//.test(image)
+    ? image
+    : `https://images.unsplash.com/${image}?auto=format&fit=crop&w=900&q=80`
+})
 
 // 모달 열림/닫힘 상태 관리
 const isModalOpen = ref(false)
@@ -27,13 +38,13 @@ function closeModal() {
     <!-- 이미지 영역 -->
     <div class="relative h-48 overflow-hidden bg-gray-100">
       <img 
-        :src="`https://images.unsplash.com/${place.image}?auto=format&fit=crop&w=900&q=80`" 
+        :src="imageSrc" 
         :alt="place.name"
         class="w-full h-full object-cover" 
       />
-      <!-- 오렌지 '관광지' 배지 -->
+      <!-- 카테고리 배지 -->
       <span class="absolute top-4 left-4 bg-[#FF4D2D] text-white text-xs font-extrabold px-3 py-1.5 rounded-full tracking-wider shadow">
-        관광지
+        {{ place.category }}
       </span>
     </div>
 
@@ -82,7 +93,7 @@ function closeModal() {
         <!-- 모달 이미지 -->
         <div class="relative h-64 w-full overflow-hidden bg-gray-100">
           <img 
-            :src="`https://images.unsplash.com/${place.image}?auto=format&fit=crop&w=1200&q=80`" 
+            :src="imageSrc" 
             :alt="place.name"
             class="h-full w-full object-cover"
           />

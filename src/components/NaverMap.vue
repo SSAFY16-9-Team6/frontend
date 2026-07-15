@@ -18,19 +18,6 @@ let mapInstance: any = null
 let markers: { id: string; marker: any }[] = []
 const isLoaded = ref(false)
 
-// 📍 목데이터의 각 부산 명소 실제 위경도 좌표 테이블
-const COORDINATES_MAP: Record<string, { mapx: string; mapy: string }> = {
-  '1': { mapx: '129.160417', mapy: '35.158714' },
-  '2': { mapx: '129.009472', mapy: '35.097561' },
-  '3': { mapx: '129.044141', mapy: '35.078652' },
-  '4': { mapx: '129.017596', mapy: '35.076214' },
-  '5': { mapx: '129.035319', mapy: '35.114714' },
-  '6': { mapx: '129.066441', mapy: '35.155891' },
-  '7': { mapx: '129.123847', mapy: '35.093496' },
-  '8': { mapx: '129.030521', mapy: '35.096732' },
-  '9': { mapx: '129.038142', mapy: '35.253301' }
-}
-
 // Tailwind 'bg-[color]' 유틸리티에서 실제 Hex(헥사) 코드 값을 추출하는 헬퍼 함수
 function getMarkerHexColor(categoryName: string): string {
   const matched = CATEGORIES.find(cat => cat.name === categoryName)
@@ -167,11 +154,8 @@ function renderMarkers() {
   const bounds = new naver.maps.LatLngBounds()
 
   props.places.forEach(place => {
-    const coords = COORDINATES_MAP[place.id]
-    if (!coords) return
-
-    const lng = parseFloat(coords.mapx)
-    const lat = parseFloat(coords.mapy)
+    const lng = parseFloat(place.mapx)
+    const lat = parseFloat(place.mapy)
 
     if (isNaN(lat) || isNaN(lng)) return
 
