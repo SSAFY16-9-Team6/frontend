@@ -1,7 +1,13 @@
 <script setup lang="ts">
-
+import HomeView from './views/HomeView.vue'
 </script>
 
 <template>
-  안녕하세요
+  <HomeView />
+  <AppButton />
+  <InfoCard />
+  <PageHeader />
+  <Footer />
+  <Navbar />
+  <PlaceCard />
 </template>

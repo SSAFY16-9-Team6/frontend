@@ -1,0 +1,14 @@
+/* colors.css */
+:root {
+  --color-deep-navy: #0F1F4B;
+  --color-coral: #FF4D2D;
+  --color-mint: #0BA09B;
+  --color-sand-cream: #F9F1E5;
+  --color-sand-cream-strong: #F4E7D3;
+  --color-text-primary: #16233E;
+  --color-text-secondary: #4F5B72;
+  --color-border: #E6D8C4;
+
+  --font-heading: 'Black Han Sans', 'Noto Sans KR', sans-serif;
+  --font-body: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+}

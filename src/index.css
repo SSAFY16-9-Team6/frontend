@@ -1,3 +1,23 @@
+@import './styles/fonts.css';
+@import './styles/colors.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    font-family: var(--font-body);
+  }
+
+  body {
+    @apply min-h-screen bg-[var(--color-sand-cream)] text-[var(--color-text-primary)] antialiased;
+    font-family: var(--font-body);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: 0.02em;
+  }
+}
