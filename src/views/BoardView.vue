@@ -5,7 +5,6 @@ import type { Post } from '../data/mockData.ts'
 import SearchBar from '../components/ui/SearchBar.vue'
 import PostCard from '../components/ui/PostCard.vue'
 import { useRouter } from 'vue-router'
-import type { Post } from '../types'
 
 const router = useRouter()
 
