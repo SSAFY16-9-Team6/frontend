@@ -19,6 +19,8 @@ const isLiked = ref<boolean>(false)
 
 // 🔒 [비밀번호 모달 관련 상태]
 const isPasswordModalOpen = ref<boolean>(false)
+// 현재 모달의 목적 구분: 'edit' (수정) 또는 'delete' (삭제)
+const modalMode = ref<'edit' | 'delete' | null>(null) 
 const inputPassword = ref<string>('')
 const passwordInputRef = ref<HTMLInputElement | null>(null)
 const passwordError = ref<string>('')
@@ -63,11 +65,6 @@ const goBack = () => {
   router.push({ name: 'board' }) 
 }
 
-const handleEdit = () => {
-  if (!post.value) return
-  router.push({ name: 'post-edit', params: { id: post.value.postId } })
-}
-
 // 📌 [좋아요 버튼 클릭 핸들러]
 const handleLike = () => {
   if (!post.value || isLiked.value) return
@@ -76,10 +73,22 @@ const handleLike = () => {
 }
 
 // ==========================================
-// 📌 4. [🔒 삭제 비밀번호 모달 제어 로직]
+// 📌 4. [🔒 비밀번호 모달 제어 로직 (수정/삭제 통합)]
 // ==========================================
 
+// 수정 버튼 클릭 시 모달 열기
+const openEditModal = () => {
+  modalMode.value = 'edit'
+  openPasswordModal()
+}
+
 // 삭제 버튼 클릭 시 모달 열기
+const openDeleteModal = () => {
+  modalMode.value = 'delete'
+  openPasswordModal()
+}
+
+// 공통 모달 열기 내부 처리
 const openPasswordModal = () => {
   isPasswordModalOpen.value = true
   inputPassword.value = ''
@@ -94,13 +103,14 @@ const openPasswordModal = () => {
 // 모달 닫기
 const closePasswordModal = () => {
   isPasswordModalOpen.value = false
+  modalMode.value = null
   inputPassword.value = ''
   passwordError.value = ''
 }
 
-// 비밀번호 검증 및 실제 삭제 처리
-const submitDelete = async () => {
-  if (!post.value) return
+// 비밀번호 검증 및 실제 동작 처리 (수정/삭제 분기)
+const handlePasswordSubmit = async () => {
+  if (!post.value || !modalMode.value) return
   
   if (!inputPassword.value.trim()) {
     passwordError.value = '비밀번호를 입력해주세요.'
@@ -108,20 +118,25 @@ const submitDelete = async () => {
   }
 
   /* 
-    [참고] 실무에서는 백엔드 API를 호출하여 비밀번호를 검증합니다.
-    여기서는 편의상 mockData에 있을 수 있는 비밀번호나 고정값을 비교하는 예시를 보여줍니다.
-    예: post.value.password === inputPassword.value
+    [참고] 백엔드 연동 전 임시 검증용 비밀번호 필터링
+    mockData에 기입된 비밀번호가 없으면 디폴트 '1234'로 대조합니다.
   */
-  const correctPassword = post.value.password || '1234' // 백엔드 연동 전까지 디폴트 비밀번호 '1234'로 검증 가정
+  const correctPassword = post.value.password || '1234'
 
   if (inputPassword.value === correctPassword) {
-    try {
-      // 삭제 성공 시 시나리오
-      alert('게시글이 성공적으로 삭제되었습니다.')
+    if (modalMode.value === 'edit') {
+      // ✍️ [수정 모드]: 검증 성공 시 모달을 닫고 작성 폼 페이지로 보냅니다.
       closePasswordModal()
-      goBack()
-    } catch (error) {
-      passwordError.value = '삭제 중 서버 오류가 발생했습니다.'
+      router.push({ name: 'post-edit', params: { id: post.value.postId } })
+    } else if (modalMode.value === 'delete') {
+      // 🗑️ [삭제 모드]: 검증 성공 시 삭제 시나리오 실행
+      try {
+        alert('게시글이 성공적으로 삭제되었습니다.')
+        closePasswordModal()
+        goBack()
+      } catch (error) {
+        passwordError.value = '삭제 중 서버 오류가 발생했습니다.'
+      }
     }
   } else {
     passwordError.value = '비밀번호가 일치하지 않습니다. 다시 입력해주세요.'
@@ -146,7 +161,7 @@ const submitDelete = async () => {
 
   <!-- 실제 상세 페이지 뷰 영역 -->
   <main v-else class="relative mx-auto max-w-3xl px-4 py-10">
-    <!-- 1. 상단 내비게이션 (뒤로가기만 배치) -->
+    <!-- 1. 상단 내비게이션 -->
     <div class="mb-8 flex items-center justify-between">
       <button 
         @click="goBack"
@@ -183,7 +198,7 @@ const submitDelete = async () => {
         {{ post.title }}
       </h1>
 
-      <!-- 메타데이터 바 (작성자, 날짜, 조회수 순서로 배치) -->
+      <!-- 메타데이터 바 -->
       <div class="flex flex-wrap items-center justify-between gap-4 border-b border-[#F5F0E6] pb-6 text-xs text-[#8A95A5]">
         <div class="flex flex-wrap items-center gap-3">
           <!-- 작성자 -->
@@ -222,7 +237,7 @@ const submitDelete = async () => {
         {{ post.content }}
       </div>
 
-      <!-- 4. 하단 버튼 영역 (좋아요 좌측 배치 / 수정·삭제 우측 배치) -->
+      <!-- 4. 하단 버튼 영역 -->
       <div class="mt-6 flex items-center justify-between gap-4 border-t border-[#F5F0E6] pt-6">
         
         <!-- 왼쪽: 좋아요 버튼 -->
@@ -255,9 +270,9 @@ const submitDelete = async () => {
 
         <!-- 오른쪽: 수정 및 삭제 버튼 묶음 -->
         <div class="flex items-center gap-2">
-          <!-- 수정 버튼 -->
+          <!-- 📌 수정 버튼 (클릭 시 비밀번호 검증 모달 트리거) -->
           <button 
-            @click="handleEdit"
+            @click="openEditModal"
             class="inline-flex items-center gap-1.5 rounded-xl bg-[#E8E4DA] px-4 py-2.5 text-sm font-semibold text-[#4F5B72] hover:bg-[#D9D4C7] hover:text-[#0F1F4B] transition-all border-0 whitespace-nowrap shrink-0"
           >
             <svg class="h-4 w-4 shrink-0 fill-none stroke-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -267,9 +282,9 @@ const submitDelete = async () => {
             <span class="leading-none">수정</span>
           </button>
 
-          <!-- 삭제 버튼 (클릭 시 커스텀 비밀번호 모달 팝업 호출) -->
+          <!-- 📌 삭제 버튼 (클릭 시 비밀번호 검증 모달 트리거) -->
           <button 
-            @click="openPasswordModal"
+            @click="openDeleteModal"
             class="inline-flex items-center rounded-xl bg-[#FFF0ED] px-4 py-2.5 text-sm font-semibold text-[#FF4D2D] hover:bg-[#FF4D2D] hover:text-white transition-all border-0 whitespace-nowrap shrink-0"
           >
             <span class="leading-none">삭제</span>
@@ -291,7 +306,10 @@ const submitDelete = async () => {
             
             <!-- 모달 헤더 -->
             <div class="mb-4 flex items-center justify-between">
-              <h3 class="text-lg font-bold text-[#0F1F4B]">비밀번호 입력</h3>
+              <!-- 📌 모달 성격에 맞춰 헤더 타이틀을 동적으로 렌더링 -->
+              <h3 class="text-lg font-bold text-[#0F1F4B]">
+                {{ modalMode === 'edit' ? '수정 비밀번호 확인' : '삭제 비밀번호 확인' }}
+              </h3>
               <button 
                 @click="closePasswordModal" 
                 class="rounded-lg p-1 text-[#8A95A5] hover:bg-[#F5F0E6] hover:text-[#0F1F4B]"
@@ -304,8 +322,9 @@ const submitDelete = async () => {
 
             <!-- 모달 본문 설명 및 인풋창 -->
             <div class="mb-6">
+              <!-- 📌 모달 안내 멘트 문구 동적화 -->
               <p class="mb-3 text-sm text-[#4F5B72]">
-                게시글을 삭제하려면 작성 시 설정한 비밀번호를 입력해주세요.
+                게시글을 {{ modalMode === 'edit' ? '수정' : '삭제' }}하려면 작성 시 설정한 비밀번호를 입력해주세요.
               </p>
               
               <input 
@@ -314,7 +333,7 @@ const submitDelete = async () => {
                 type="password" 
                 placeholder="비밀번호를 입력하세요" 
                 class="w-full rounded-xl border border-[#E6D8C4] px-4 py-3 text-sm text-[#0F1F4B] placeholder-[#8A95A5] focus:border-[#0F1F4B] focus:outline-none focus:ring-1 focus:ring-[#0F1F4B]"
-                @keyup.enter="submitDelete"
+                @keyup.enter="handlePasswordSubmit"
               />
 
               <!-- 검증 에러 메시지 노출 -->
@@ -332,7 +351,7 @@ const submitDelete = async () => {
                 취소
               </button>
               <button 
-                @click="submitDelete"
+                @click="handlePasswordSubmit"
                 class="rounded-xl bg-[#FF4D2D] px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-600 transition-all shadow-sm"
               >
                 확인

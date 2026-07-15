@@ -56,19 +56,6 @@ const formattedDate = computed(() => {
         <span v-else class="rounded-md bg-gray-400 px-3 py-1 text-xs font-semibold text-white">
           기타
         </span>
-
-        <!-- 호버 시 나타나는 삭제(쓰레기통) 버튼 -->
-        <!-- @click.stop 을 사용해 삭제 버튼 클릭 시 상세 페이지 이동 이벤트가 터지는 것을 방지합니다 -->
-        <button
-          @click.stop="emit('delete', post.postId)"
-          type="button"
-          class="invisible opacity-0 group-hover:visible group-hover:opacity-100 flex h-7 w-7 items-center justify-center rounded-full bg-[#F5F0E6] text-[#8A95A5] hover:bg-[#FF4D2D] hover:text-white transition-all duration-200"
-          title="삭제하기"
-        >
-          <svg class="h-4 w-4 stroke-current" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
       </div>
 
       <!-- 2. 제목 -->

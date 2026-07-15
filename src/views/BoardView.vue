@@ -29,17 +29,6 @@ const handlePostClick = (postId: string | number) => {
   }
 }
 
-// 4. 글 삭제 핸들러 (목록 카드의 삭제 버튼 또는 상세 보기의 삭제 버튼 클릭 시)
-const handlePostDelete = (postId: string | number) => {
-  if (confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
-    posts.value = posts.value.filter(p => p.postId !== postId)
-    // 만약 현재 상세 보기가 열려 있는 상태에서 삭제했다면 목록으로 강제 전환
-    if (selectedPost.value?.postId === postId) {
-      selectedPost.value = null
-    }
-  }
-}
-
 // 5. 검색 및 카테고리 필터링 연산
 const filteredPosts = computed(() => {
   return posts.value.filter(post => {
@@ -125,7 +114,6 @@ function handleSelect(postId) {
         :key="post.postId"
         :post="post"
         @select="handleSelect"
-        @delete="handlePostDelete"
       />
     </div>
   </section>
