@@ -4,6 +4,7 @@ import HomeView from '../views/HomeView.vue'
 import BoardView from '../views/BoardView.vue'
 import BoardDetailView from '../views/BoardDetailView.vue'
 import BoardUpdateView from '../views/BoardUpdateView.vue'
+import BoardCreateView from '../views/BoardCreateView.vue'
 
 const routes = [
   {
@@ -27,6 +28,11 @@ const routes = [
     name: 'post-edit',
     component: BoardUpdateView,
     props: true
+  },
+  {
+    path: '/board/create',
+    name: 'board-create',
+    component: BoardCreateView
   }
 ]
 

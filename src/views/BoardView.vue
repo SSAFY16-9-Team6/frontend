@@ -50,6 +50,11 @@ const router = useRouter()
 function handleSelect(postId) {
   router.push({ name: 'post-detail', params: { id: String(postId) } })
 }
+
+// ✍️ [글쓰기 페이지 이동 핸들러]
+const goCreatePage = () => {
+  router.push('/board/create')
+}
 </script>
 
 <template>
@@ -65,7 +70,22 @@ function handleSelect(postId) {
   <!-- 📌 CASE B: 기본 목록을 띄우는 경우 (v-else) -->
   <section v-else class="mx-auto max-w-7xl px-6 py-8">
     <span class="text-xs font-semibold text-[#FF4D2D] uppercase tracking-wider">커뮤니티</span>
-    <h2 class="mb-6 font-heading text-2xl text-[#0F1F4B]">여행 이야기 게시판</h2>
+    
+    <!-- 타이틀 영역 -->
+    <div class="mb-6 flex items-center justify-between">
+      <h2 class="font-heading text-2xl text-[#0F1F4B] m-0">여행 이야기 게시판</h2>
+      
+      <!-- ✍️ 글쓰기 버튼 (붉은색 테마 적용) -->
+      <button 
+        @click="goCreatePage"
+        class="inline-flex items-center gap-1.5 rounded-xl bg-[#FF4D2D] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#e03d1e] transition-all shadow-sm"
+      >
+        <svg class="h-4 w-4 stroke-current fill-none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 5v14M5 12h14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>글쓰기</span>
+      </button>
+    </div>
 
     <!-- 검색 바 -->
     <div class="mb-6">
