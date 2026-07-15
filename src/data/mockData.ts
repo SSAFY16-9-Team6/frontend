@@ -1,3 +1,4 @@
+// src/data/mock.ts
 import type { Place, Post, ChatMsg } from '../types'
 
 export const PLACES: Place[] = [
@@ -9,6 +10,8 @@ export const PLACES: Place[] = [
     description: '부산 최고의 대표 해수욕장. 광활한 백사장과 우뚝 솟은 고층 빌딩숲이 완벽한 조화를 이루는 명실상부한 명소입니다.',
     address: '부산광역시 해운대구 우동',
     image: 'photo-1507525428034-b723cf961d3e',
+    mapx: '129.160417',
+    mapy: '35.158714'
   },
   {
     id: '2',
@@ -18,6 +21,8 @@ export const PLACES: Place[] = [
     description: '앞바다가 훤히 내려다보이는 산자락에 아기자기한 파스텔톤 집들이 모여 있어 한국의 산토리니로 불리는 예술 마을입니다.',
     address: '부산광역시 사하구 감내2로 203',
     image: 'photo-1542291026-7eec264c27ff',
+    mapx: '129.009472',
+    mapy: '35.097561'
   },
   {
     id: '3',
@@ -27,6 +32,8 @@ export const PLACES: Place[] = [
     description: '가파른 절벽 위에 세워진 하얀 주택들과 그 옆으로 끝없이 펼쳐지는 에메랄드빛 남해 바다가 압도적인 감성을 선사합니다.',
     address: '부산광역시 영도구 영선동4가',
     image: 'photo-1547826039-bfc35e0f1ea8',
+    mapx: '129.044141',
+    mapy: '35.078652'
   },
   {
     id: '4',
@@ -36,6 +43,8 @@ export const PLACES: Place[] = [
     description: '푸른 서구 바다 위를 시원하게 활공하는 송도 해상케이블카와 짜릿한 바다 위 공중 산책길을 즐길 수 있습니다.',
     address: '부산광역시 서구 송도해변로 100',
     image: 'photo-1501854140801-50d01698950b',
+    mapx: '129.017596',
+    mapy: '35.076214'
   },
   {
     id: '5',
@@ -45,6 +54,8 @@ export const PLACES: Place[] = [
     description: '동구 도심 속 높은 산복도로 경사지를 기막히게 오르내리는 모노레일과 근현대사의 숨결을 가득 품은 레트로 골목입니다.',
     address: '부산광역시 동구 초량동',
     image: 'photo-1506744038136-46273834b3fb',
+    mapx: '129.035319',
+    mapy: '35.114714'
   },
   {
     id: '6',
@@ -54,6 +65,8 @@ export const PLACES: Place[] = [
     description: '기존 공구 골목의 낡은 분위기를 젊은 예술가들과 개성 만점 바리스타들이 뉴트로 핫플레이스로 재탄생시켰습니다.',
     address: '부산광역시 부산진구 전포대로',
     image: 'photo-1554118811-1e0d58224f24',
+    mapx: '129.066441',
+    mapy: '35.155891'
   },
   {
     id: '7',
@@ -63,6 +76,8 @@ export const PLACES: Place[] = [
     description: '남구 바다 절벽 끝자락에 설치된 유리 스카이워크를 거닐며 세찬 파도와 신비로운 오륙도의 자태를 가장 가까이서 감상할 수 있습니다.',
     address: '부산광역시 남구 용호동 936',
     image: 'photo-1533105079780-92b9be482077',
+    mapx: '129.123847',
+    mapy: '35.093496'
   },
   {
     id: '8',
@@ -72,6 +87,8 @@ export const PLACES: Place[] = [
     description: '오이소, 보이소, 사이소! 활력이 흘러 넘치는 대한민국 대표 수산시장으로 싱싱한 제철 해산물의 먹방 재미가 쏠쏠합니다.',
     address: '부산광역시 중구 자갈치해안로 52',
     image: 'photo-1534482421-64566f976cfa',
+    mapx: '129.030521',
+    mapy: '35.096732'
   },
   {
     id: '9',
@@ -81,6 +98,8 @@ export const PLACES: Place[] = [
     description: '맑은 낙동강 줄기를 굽어보는 북구 금정산 맑은 기슭에 위치하여 푸른 온실 식물들과 한적한 피톤치드 힐링을 선사합니다.',
     address: '부산광역시 북구 화명동 산45',
     image: 'photo-1448375240586-882707db888b',
+    mapx: '129.038142',
+    mapy: '35.253301'
   }
 ]
 
