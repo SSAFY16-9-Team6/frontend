@@ -6,6 +6,7 @@ import type { Place } from '../types'
 import NaverMap from '../components/NaverMap.vue'
 
 const selectedCategoryId = ref('all')
+const selectedDistrict = ref('all') // 1. 구별 필터를 위한 반응형 변수 추가 (기본값: 전체)
 const activePlaceId = ref<string | null>(null)
 const allPlaces = ref<Place[]>([])
 const isLoading = ref(false)
@@ -16,9 +17,21 @@ const selectedCategoryName = computed(() => {
   return CATEGORIES.find((cat) => cat.id === selectedCategoryId.value)?.name ?? '전체'
 })
 
+// 2. 카테고리 필터와 구별 필터를 모두 거쳐 최종 필터링된 결과 도출
 const filteredPlaces = computed(() => {
-  if (selectedCategoryId.value === 'all') return allPlaces.value
-  return allPlaces.value.filter((place) => place.categoryId === selectedCategoryId.value)
+  let result = allPlaces.value
+
+  // 카테고리 필터 적용
+  if (selectedCategoryId.value !== 'all') {
+    result = result.filter((place) => place.categoryId === selectedCategoryId.value)
+  }
+
+  // 구별 필터 적용
+  if (selectedDistrict.value !== 'all') {
+    result = result.filter((place) => place.region === selectedDistrict.value)
+  }
+
+  return result
 })
 
 const activePlace = computed(() => {
@@ -98,6 +111,17 @@ async function loadPlaces() {
   }
 }
 
+// 필터 교체 시 활성화된 카드의 위치 유효성을 고려하여 닫아줌
+function selectDistrictFilter(districtName: string) {
+  selectedDistrict.value = districtName
+  activePlaceId.value = null
+}
+
+function selectCategoryFilter(categoryId: string) {
+  selectedCategoryId.value = categoryId
+  activePlaceId.value = null
+}
+
 function handlePlaceSelect(placeId: string) {
   activePlaceId.value = placeId
 }
@@ -119,15 +143,54 @@ onMounted(() => {
       <h1 class="text-3xl font-black text-[#0F1F4B] mt-1">부산 관광 지도</h1>
     </div>
 
-    <!-- 카테고리별 필터 컨트롤 -->
-    <div class="flex flex-col gap-4 mb-6">
+    <!-- 필터 컨트롤 영역 (구별 필터를 카테고리 위쪽에 구성) -->
+    <div class="flex flex-col gap-5 mb-8 bg-white p-6 rounded-[24px] border border-[#E6D8C4] shadow-sm">
+      
+      <!-- [A] 지역구별 필터 (카테고리 위쪽) -->
       <div class="flex flex-wrap gap-2 items-center">
-        <span class="text-xs font-bold text-[#4F5B72] mr-2">카테고리별</span>
+        <span class="text-xs font-bold text-[#4F5B72] mr-3 shrink-0">지역구별</span>
         
         <!-- 전체 필터 버튼 -->
         <button
           type="button"
-          @click="selectedCategoryId = 'all'"
+          @click="selectDistrictFilter('all')"
+          :class="[
+            'px-3.5 py-1.5 rounded-full text-xs font-semibold transition border',
+            selectedDistrict === 'all'
+              ? 'bg-[#FF4D2D] text-white border-[#FF4D2D]'
+              : 'bg-white text-[#4F5B72] border-[#E6D8C4] hover:bg-[#F4E7D3]/40'
+          ]"
+        >
+          전체
+        </button>
+
+        <button
+          v-for="district in DISTRICTS"
+          :key="district.code"
+          type="button"
+          @click="selectDistrictFilter(district.name)"
+          :class="[
+            'px-3.5 py-1.5 rounded-full text-xs font-semibold transition border',
+            selectedDistrict === district.name
+              ? 'bg-[#FF4D2D] text-white border-[#FF4D2D]'
+              : 'bg-white text-[#4F5B72] border-[#E6D8C4] hover:bg-[#F4E7D3]/40'
+          ]"
+        >
+          {{ district.name }}
+        </button>
+      </div>
+
+      <!-- 구분선 -->
+      <div class="border-t border-[#F4E7D3]/60"></div>
+
+      <!-- [B] 카테고리별 필터 -->
+      <div class="flex flex-wrap gap-2 items-center">
+        <span class="text-xs font-bold text-[#4F5B72] mr-3 shrink-0">카테고리별</span>
+        
+        <!-- 전체 필터 버튼 -->
+        <button
+          type="button"
+          @click="selectCategoryFilter('all')"
           :class="[
             'px-4 py-2 rounded-full text-xs font-semibold transition border',
             selectedCategoryId === 'all'
@@ -142,7 +205,7 @@ onMounted(() => {
           v-for="cat in CATEGORIES"
           :key="cat.id"
           type="button"
-          @click="selectedCategoryId = cat.id"
+          @click="selectCategoryFilter(cat.id)"
           :class="[
             'px-4 py-2 rounded-full text-xs font-semibold transition border',
             selectedCategoryId === cat.id
@@ -153,9 +216,10 @@ onMounted(() => {
           {{ cat.name }}
         </button>
       </div>
+
     </div>
 
-    <!-- 메인 지도/목록 뷰 (상단 레이아웃) -->
+    <!-- 메인 지도/목록 뷰 -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[550px]">
       <!-- 네이버 지도 영역 -->
       <div class="lg:col-span-2 relative rounded-[32px] overflow-hidden border border-[#E6D8C4] bg-white shadow-sm">
@@ -179,8 +243,8 @@ onMounted(() => {
           <div v-else-if="errorMessage" class="h-full flex items-center justify-center text-sm text-[#8A94A6]">
             {{ errorMessage }}
           </div>
-          <div v-else-if="filteredPlaces.length === 0" class="h-full flex items-center justify-center text-sm text-[#8A94A6]">
-            조건에 맞는 장소가 없습니다.
+          <div v-else-if="filteredPlaces.length === 0" class="h-full flex items-center justify-center text-sm text-[#8A94A6] text-center px-4">
+            해당 지역구 및 카테고리에 맞는 장소가 없습니다.
           </div>
           <div
             v-for="place in filteredPlaces"
@@ -206,15 +270,20 @@ onMounted(() => {
             </div>
 
             <div class="flex-1 min-w-0">
-              <h3 class="font-bold text-[#0F1F4B] truncate">{{ place.name }}</h3>
-              <p class="text-xs text-[#8A94A6] mt-0.5 truncate">{{ place.address }}</p>
+              <div class="flex items-center gap-1.5">
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-[#F4E7D3] text-[#4F5B72] shrink-0">
+                  {{ place.region }}
+                </span>
+                <h3 class="font-bold text-[#0F1F4B] truncate">{{ place.name }}</h3>
+              </div>
+              <p class="text-xs text-[#8A94A6] mt-1 truncate">{{ place.address }}</p>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 하단 선택 장소 상세 정보 카드 (설명 및 팁 텍스트 전면 배제) -->
+    <!-- 하단 선택 장소 상세 정보 카드 -->
     <transition name="fade-slide">
       <div 
         v-if="activePlace" 
@@ -240,9 +309,15 @@ onMounted(() => {
           />
         </div>
 
-        <!-- 2. 장소 정보 콘텐츠 (이름, 주소만 정돈하여 노출) -->
+        <!-- 2. 장소 정보 콘텐츠 -->
         <div class="flex-1 min-w-0 pr-6">
-          <h2 class="text-2xl font-black text-[#0F1F4B] truncate">{{ activePlace.name }}</h2>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 text-xs font-bold bg-[#FF4D2D] text-white rounded-md">
+              {{ activePlace.region }}
+            </span>
+            <span class="text-xs font-semibold text-[#8A94A6]">{{ activePlace.category }}</span>
+          </div>
+          <h2 class="text-2xl font-black text-[#0F1F4B] truncate mt-1.5">{{ activePlace.name }}</h2>
           
           <div class="flex items-center gap-1.5 text-sm text-[#4F5B72] mt-2 font-semibold">
             <svg class="w-4 h-4 text-[#FF4D2D] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
