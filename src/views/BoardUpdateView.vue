@@ -2,7 +2,6 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { CATEGORIES } from '../data/constants'
-import { INIT_POSTS } from '../data/mockData'
 import type { Post } from '../types/index'
 
 const router = useRouter()
@@ -36,7 +35,7 @@ const errors = ref({
 // ==========================================
 onMounted(async () => {
   try {
-    const foundPost = INIT_POSTS.find(p => String(p.postId) === postId) || null
+    const foundPost = INIT_POSTS.find((p: any) => String(p.postId) === postId) || null
     
     if (foundPost) {
       originalPost.value = foundPost

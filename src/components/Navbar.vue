@@ -34,7 +34,7 @@ function selectTab(tab: string) {
 <template>
     <nav class="sticky top-0 z-50 flex items-center justify-between bg-white px-6 py-3.5 shadow-sm">
         <!-- 로고 -->
-        <div class="flex items-center gap-2 cursor-pointer" @click="selectTab('tourism')">
+        <div class="flex items-center gap-2 cursor-pointer" @click="selectTab('home')">
             <div
                 class="w-8 h-8 rounded-full bg-[#0F1F4B] flex items-center justify-center text-white font-black text-sm"
             >
