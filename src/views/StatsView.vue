@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { CATEGORIES } from '../data/constants.ts'
 
 const isMounted = ref(false)
