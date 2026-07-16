@@ -25,7 +25,7 @@ const updateValue = (value: string) => {
       <input
         type="text"
         :value="props.modelValue"
-        @input="updateValue($event.target.value)"
+        @input="updateValue(($event.currentTarget as HTMLInputElement).value)"
         :placeholder="props.placeholder || '검색어를 입력해주세요'"
         class="h-full w-full bg-transparent text-sm font-medium text-[#0F1F4B] outline-none placeholder:text-[#8A95A5] placeholder:font-normal"
       />

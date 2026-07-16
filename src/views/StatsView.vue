@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { CATEGORIES, DISTRICTS } from '../data/constants.ts'
+import { CATEGORIES } from '../data/constants.ts'
 
 const isMounted = ref(false)
-const router = useRouter()
 
 const categoryTotals = ref<Record<string, number>>({})
 const statsError = ref('')
