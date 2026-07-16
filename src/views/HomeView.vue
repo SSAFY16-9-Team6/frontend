@@ -18,54 +18,47 @@ const categoryImages: Record<string, string> = {
   '38': 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=600&q=80', // 쇼핑
 }
 
-// 각 카테고리 카드 상세 메타데이터 (가독성을 위한 파스텔톤 배경 및 텍스트/아이콘 전용 테마색 지정)
+// 각 카테고리 카드 상세 메타데이터 (가독성을 위한 파스텔톤 배경 및 텍스트/아이콘 전용 테마색 지정, 하드코딩된 count 제거)
 const categoryDetails = ref([
   {
     id: '12',
     description: '해운대 · 광안리 · 감천 등 명소',
-    count: 142,
     textColor: 'text-[#FF6B4A]', // 하단 개수 강조 컬러
     iconBg: 'bg-[#FF4D2D]'      // 아이콘 원형 배경
   },
   {
     id: '14',
     description: '박물관 · 갤러리 · 공연장',
-    count: 87,
     textColor: 'text-[#A394FF]',
     iconBg: 'bg-[#6C5DD3]'
   },
   {
     id: '15',
     description: 'BIFF · 불꽃축제 · 어방축제',
-    count: 63,
     textColor: 'text-[#FFB55F]',
     iconBg: 'bg-[#FF9F43]'
   },
   {
     id: '25',
     description: '반나절 · 당일 · 1박2일 코스',
-    count: 38,
     textColor: 'text-[#10E3D1]',
     iconBg: 'bg-[#0BA09B]'
   },
   {
     id: '28',
     description: '서핑 · 클라이밍 · 수상레저',
-    count: 54,
     textColor: 'text-[#50E469]',
     iconBg: 'bg-[#2ECC71]'
   },
   {
     id: '32',
     description: '호텔 · 게스트하우스 · 펜션',
-    count: 209,
     textColor: 'text-[#5EADFF]',
     iconBg: 'bg-[#3182CE]'
   },
   {
     id: '38',
     description: '국제시장 · 서면 · 센텀시티',
-    count: 95,
     textColor: 'text-[#FFA1EB]',
     iconBg: 'bg-[#E040FB]'
   }
@@ -89,7 +82,7 @@ const categoryList = CATEGORIES.map(cat => {
   return {
     ...cat,
     description: detail?.description || '부산의 다양한 핫플레이스',
-    count: detail?.count || 0,
+    count: cat.total || 0, // constants.ts의 CATEGORIES 안의 total 필드를 가져와 매핑합니다.
     bgImage: bgImg,
     textColor: detail?.textColor || 'text-[#FF4D2D]',
     iconBg: detail?.iconBg || 'bg-gray-100',
