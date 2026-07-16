@@ -81,7 +81,7 @@ function handleQuickReply(reply: string) {
 </script>
 
 <template>
-    <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+    <div class="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-4">
         <aside
             v-if="isOpen"
             class="flex h-[600px] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[28px] border border-[#E6D8C4] bg-white shadow-2xl"

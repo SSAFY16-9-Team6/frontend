@@ -174,37 +174,60 @@ const handlePasswordSubmit = async () => {
         return
     }
 
-    if (modalMode.value === 'edit') {
-        closePasswordModal()
-        router.push({ name: 'post-edit', params: { id: post.value.postId } })
-        return
-    }
-
     try {
         isDeleting.value = true
         passwordError.value = ''
 
-        const response = await fetch(`https://backend-xxf5.onrender.com/api/v1/posts/${post.value.postId}`, {
-            method: 'DELETE',
-            headers: {
-                accept: 'application/json',
-                'Content-Type': 'application/json',
+        const verifyResponse = await fetch(
+            `https://backend-xxf5.onrender.com/api/v1/posts/${post.value.postId}/verify-password`,
+            {
+                method: 'POST',
+                headers: {
+                    accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ password: inputPassword.value }),
             },
-            body: JSON.stringify({ password: inputPassword.value }),
-        })
+        )
 
-        const result = await response.json().catch(() => null)
+        const verifyResult = await verifyResponse.json().catch(() => null)
 
-        if (response.ok && result?.success) {
-            closePasswordModal()
-            goBack()
+        if (!verifyResponse.ok || !verifyResult?.success || !verifyResult.data?.verified) {
+            passwordError.value = verifyResult?.message || '비밀번호가 일치하지 않습니다.'
             return
         }
 
-        passwordError.value = result?.message || '삭제에 실패했습니다.'
+        if (modalMode.value === 'edit') {
+            sessionStorage.setItem('canEdit', 'true')
+            closePasswordModal()
+            router.push({ name: 'post-edit', params: { id: post.value.postId } })
+            return
+        }
+
+        const deleteResponse = await fetch(
+            `https://backend-xxf5.onrender.com/api/v1/posts/${post.value.postId}`,
+            {
+                method: 'DELETE',
+                headers: {
+                    accept: 'application/json',
+                },
+            },
+        )
+
+        const deleteResult = await deleteResponse.json().catch(() => null)
+
+        if (!deleteResponse.ok || !deleteResult?.success || !deleteResult?.data?.ok) {
+            throw new Error(deleteResult?.message || `삭제 실패 (${deleteResponse.status})`)
+        }
+
+        closePasswordModal()
+        goBack()
     } catch (error) {
         console.error('게시글 삭제 실패:', error)
-        passwordError.value = '삭제 중 서버 오류가 발생했습니다.'
+        passwordError.value =
+            error instanceof Error
+                ? error.message
+                : '삭제 중 서버 오류가 발생했습니다.'
     } finally {
         isDeleting.value = false
     }

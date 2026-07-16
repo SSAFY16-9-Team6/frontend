@@ -2,7 +2,6 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { CATEGORIES } from '../data/constants'
-import { INIT_POSTS } from '../data/mockData'
 import type { Post } from '../types/index'
 
 const router = useRouter()
@@ -10,9 +9,6 @@ const route = useRoute()
 
 const postId = String(route.params.id || '')
 
-// ==========================================
-// 📌 1. [동적 데이터 상태 선언]
-// ==========================================
 const isLoading = ref<boolean>(true)
 const originalPost = ref<Post | null>(null)
 
@@ -23,6 +19,7 @@ const content = ref<string>('')
 
 // 커스텀 드롭다운 열림/닫힘 상태
 const isCategoryOpen = ref<boolean>(false)
+const isSubmitting = ref<boolean>(false)
 
 // 에러 메시지 상태
 const errors = ref({
@@ -31,29 +28,47 @@ const errors = ref({
   content: ''
 })
 
-// ==========================================
-// 📌 2. [기존 데이터 불러오기]
-// ==========================================
-onMounted(async () => {
+const fetchPostForEdit = async () => {
   try {
-    const foundPost = INIT_POSTS.find(p => String(p.postId) === postId) || null
-    
-    if (foundPost) {
-      originalPost.value = foundPost
-      title.value = foundPost.title
-      categoryId.value = foundPost.categoryId
-      content.value = foundPost.content
-    } else {
-      alert('존재하지 않는 게시글입니다.')
-      goBack()
+    const response = await fetch(`https://backend-xxf5.onrender.com/api/v1/posts/${postId}`, {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new Error(`게시글 조회 실패 (${response.status})`)
     }
+
+    const result = await response.json()
+    if (!result?.success || !result?.data) {
+      throw new Error('게시글 응답 형식이 올바르지 않습니다.')
+    }
+
+    const data = result.data
+    originalPost.value = {
+      postId: data.postId,
+      title: data.title,
+      content: data.content,
+      categoryId: String(data.categoryId),
+      author: data.author || '익명',
+      createdAt: data.createdAt,
+      likeCount: data.likeCount ?? 0,
+      views: data.viewCount ?? 0,
+    }
+    title.value = originalPost.value.title
+    categoryId.value = originalPost.value.categoryId
+    content.value = originalPost.value.content
   } catch (error) {
-    console.error('데이터를 불러오는 중 오류가 발생했습니다:', error)
+    console.error(error)
+    alert('존재하지 않는 게시글입니다.')
+    goBack()
   } finally {
     isLoading.value = false
   }
-  
-  // 외부 클릭 시 드롭다운 닫기 이벤트 등록
+}
+
+onMounted(async () => {
+  await fetchPostForEdit()
   window.addEventListener('click', handleOutsideClick)
 })
 
@@ -61,9 +76,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('click', handleOutsideClick)
 })
 
-// ==========================================
-// 📌 3. [이벤트 핸들러 및 인터랙션]
-// ==========================================
 
 // 드롭다운 외부 클릭 감지 로직
 const handleOutsideClick = (e: MouseEvent) => {
@@ -114,16 +126,43 @@ const handleSubmit = async () => {
   if (!validateForm()) return
 
   try {
-    if (originalPost.value) {
-      originalPost.value.title = title.value
-      originalPost.value.categoryId = categoryId.value
-      originalPost.value.content = content.value
+    isSubmitting.value = true
+
+    const payload = {
+      categoryId: Number(categoryId.value),
+      title: title.value.trim(),
+      content: content.value.trim(),
     }
 
-    alert('게시글이 수정되었습니다.')
-    router.push({ name: 'board-detail', params: { id: postId } })
+    const response = await fetch(
+      `https://backend-xxf5.onrender.com/api/v1/posts/${postId}`,
+      {
+        method: 'PUT',
+        headers: {
+          accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      },
+    )
+
+    const result = await response.json().catch(() => null)
+
+    if (!response.ok || !result?.success) {
+      throw new Error(result?.message || `수정 실패 (${response.status})`)
+    }
+
+    router.push({ name: 'board' })
   } catch (error) {
-    alert('수정 처리에 실패했습니다. 다시 시도해 주세요.')
+    console.error('게시글 수정 실패:', error)
+    alert(
+      error instanceof Error
+        ? error.message
+        : '수정 처리에 실패했습니다. 다시 시도해 주세요.',
+    )
+  } finally {
+    isSubmitting.value = false
+    sessionStorage.removeItem('canEdit')
   }
 }
 
@@ -142,7 +181,6 @@ const getCategoryName = (id: string) => {
   <!-- 실제 수정 폼 영역 -->
   <main v-else class="mx-auto max-w-3xl px-4 py-10">
     
-    <!-- 📌 [최상단 배치] 취소하고 돌아가기 버튼 -->
     <div class="mb-4">
       <button 
         type="button"

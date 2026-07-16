@@ -7,6 +7,7 @@ import BoardUpdateView from '../views/BoardUpdateView.vue'
 import BoardCreateView from '../views/BoardCreateView.vue'
 import TourismView from '../views/TourismView.vue'
 import MapView from '../views/MapView.vue'
+import StatsView from '../views/StatsView.vue'
 
 const routes = [
   {
@@ -39,18 +40,37 @@ const routes = [
     path: '/board/edit/:id',
     name: 'post-edit',
     component: BoardUpdateView,
-    props: true
+    props: true,
+    meta: { requiresEditAuth: true }
   },
   {
     path: '/board/create',
     name: 'board-create',
     component: BoardCreateView
+  },
+  {
+    path: '/stats',
+    name: 'stats',
+    component: StatsView
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
+})
+
+router.beforeEach((to, _from, next) => {
+  if (to.meta.requiresEditAuth) {
+    const canEdit = sessionStorage.getItem('canEdit')
+    if (canEdit === 'true') {
+      next()
+      return
+    }
+    next({ name: 'board' })
+    return
+  }
+  next()
 })
 
 export default router
