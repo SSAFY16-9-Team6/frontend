@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import PlaceCard from '../components/PlaceCard.vue'
 import Chatbot from '../components/Chatbot.vue'
-import { FEATURED_PLACES, EVENTS } from '../data/mockData'
 </script>
 
 <template>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { CATEGORIES } from '../data/constants.ts'
-import type { Post } from '../data/mockData.ts'
 import SearchBar from '../components/ui/SearchBar.vue'
 import PostCard from '../components/ui/PostCard.vue'
 import { useRouter } from 'vue-router'
@@ -13,9 +12,29 @@ const searchQuery = ref<string>('')
 const selectedCategoryId = ref<string>('all')
 const isLoading = ref(false)
 const errorMessage = ref('')
+const currentPage = ref(1)
+const pageSize = 20
+const totalPages = ref(1)
+const totalCount = ref(0)
 
 const selectCategory = (id: string) => {
     selectedCategoryId.value = id
+}
+
+const mapPost = (item: any): Post => ({
+    postId: item.postId,
+    title: item.title,
+    content: item.content,
+    categoryId: String(item.categoryId),
+    author: item.author || '익명',
+    createdAt: item.createdAt,
+    likeCount: item.likeCount ?? 0,
+    views: item.viewCount ?? 0,
+})
+
+const updatePagination = (data: any) => {
+    totalCount.value = data?.totalCount ?? 0
+    totalPages.value = Math.max(1, Math.ceil(totalCount.value / pageSize))
 }
 
 const fetchPosts = async () => {
@@ -23,12 +42,15 @@ const fetchPosts = async () => {
     errorMessage.value = ''
 
     try {
-        const response = await fetch('https://backend-xxf5.onrender.com/api/v1/posts?page=1&size=20', {
-            method: 'GET',
-            headers: {
-                accept: 'application/json',
+        const response = await fetch(
+            `https://backend-xxf5.onrender.com/api/v1/posts?page=${currentPage.value}&size=${pageSize}`,
+            {
+                method: 'GET',
+                headers: {
+                    accept: 'application/json',
+                },
             },
-        })
+        )
 
         if (!response.ok) {
             throw new Error(`게시글 목록 조회 실패 (${response.status})`)
@@ -37,35 +59,90 @@ const fetchPosts = async () => {
         const result = await response.json()
 
         if (result?.success && Array.isArray(result?.data?.items)) {
-            posts.value = result.data.items.map((item: any) => ({
-                postId: item.postId,
-                title: item.title,
-                content: item.content,
-                categoryId: String(item.categoryId),
-                author: item.author || '익명',
-                createdAt: item.createdAt,
-                likeCount: item.likeCount ?? 0,
-                views: item.viewCount ?? 0,
-            }))
+            posts.value = result.data.items.map(mapPost)
+            updatePagination(result.data)
             return
         }
 
         throw new Error('게시글 목록 응답 형식이 올바르지 않습니다.')
     } catch (error) {
         console.error('게시글 목록 로드 실패:', error)
-        errorMessage.value = error instanceof Error ? error.message : '게시글 목록을 불러오지 못했습니다.'
+        posts.value = []
+        totalPages.value = 1
+        totalCount.value = 0
+        errorMessage.value =
+            error instanceof Error
+                ? error.message
+                : '게시글 목록을 불러오지 못했습니다.'
     } finally {
         isLoading.value = false
     }
 }
 
-onMounted(() => {
-    fetchPosts()
-})
+const fetchSearchPosts = async (keyword: string) => {
+    isLoading.value = true
+    errorMessage.value = ''
+
+    try {
+        const response = await fetch(
+            `https://backend-xxf5.onrender.com/api/v1/posts/search?keyword=${encodeURIComponent(
+                keyword,
+            )}&page=${currentPage.value}&size=${pageSize}`,
+            {
+                method: 'GET',
+                headers: {
+                    accept: 'application/json',
+                },
+            },
+        )
+
+        if (!response.ok) {
+            throw new Error(`검색 요청 실패 (${response.status})`)
+        }
+
+        const result = await response.json()
+
+        if (result?.success && Array.isArray(result?.data?.items)) {
+            posts.value = result.data.items.map(mapPost)
+            updatePagination(result.data)
+            return
+        }
+
+        posts.value = []
+        totalPages.value = 1
+        totalCount.value = 0
+    } catch (error) {
+        console.error('검색 실패:', error)
+        posts.value = []
+        totalPages.value = 1
+        totalCount.value = 0
+        errorMessage.value =
+            error instanceof Error
+                ? error.message
+                : '검색 중 오류가 발생했습니다.'
+    } finally {
+        isLoading.value = false
+    }
+}
+
+watch(
+    searchQuery,
+    (value) => {
+        currentPage.value = 1
+        const keyword = value.trim()
+        if (keyword === '') {
+            fetchPosts()
+        } else {
+            fetchSearchPosts(keyword)
+        }
+    },
+)
 
 const filteredPosts = computed(() => {
     return posts.value.filter((post) => {
-        const matchesCategory = selectedCategoryId.value === 'all' || post.categoryId === selectedCategoryId.value
+        const matchesCategory =
+            selectedCategoryId.value === 'all' ||
+            post.categoryId === selectedCategoryId.value
 
         const cleanQuery = searchQuery.value.trim().toLowerCase()
         const matchesSearch =
@@ -84,6 +161,21 @@ function handleSelect(postId: string | number) {
 const goCreatePage = () => {
     router.push('/board/create')
 }
+
+const changePage = (page: number) => {
+    if (page < 1 || page > totalPages.value) return
+    currentPage.value = page
+    const keyword = searchQuery.value.trim()
+    if (keyword === '') {
+        fetchPosts()
+    } else {
+        fetchSearchPosts(keyword)
+    }
+}
+
+onMounted(() => {
+    fetchPosts()
+})
 </script>
 
 <template>
@@ -136,7 +228,9 @@ const goCreatePage = () => {
             </button>
         </div>
 
-        <div v-if="isLoading" class="py-16 text-center text-[#4F5B72]">게시글을 불러오는 중입니다...</div>
+        <div v-if="isLoading" class="py-16 text-center text-[#4F5B72]">
+            게시글을 불러오는 중입니다...
+        </div>
 
         <div
             v-else-if="errorMessage"
@@ -148,10 +242,41 @@ const goCreatePage = () => {
         <div v-else class="space-y-4">
             <div v-if="filteredPosts.length === 0" class="py-16 text-center text-[#4F5B72]">
                 <p class="text-lg font-medium">검색 결과나 일치하는 게시글이 없습니다.</p>
-                <p class="mt-1 text-sm text-[#8A95A5]">다른 검색어를 입력하거나 카테고리를 변경해 보세요.</p>
+                <p class="mt-1 text-sm text-[#8A95A5]">
+                    다른 검색어를 입력하거나 카테고리를 변경해 보세요.
+                </p>
             </div>
 
-            <PostCard v-for="post in filteredPosts" :key="post.postId" :post="post" @select="handleSelect" />
+            <PostCard
+                v-for="post in filteredPosts"
+                :key="post.postId"
+                :post="post"
+                @select="handleSelect"
+            />
+        </div>
+
+        <div v-if="totalPages > 1" class="mt-8 flex items-center justify-center gap-2">
+            <button
+                type="button"
+                class="rounded-full border border-[#E6D8C4] bg-white px-4 py-2 text-sm font-semibold text-[#4F5B72] disabled:opacity-50"
+                :disabled="currentPage === 1"
+                @click="changePage(currentPage - 1)"
+            >
+                이전
+            </button>
+
+            <span class="px-3 py-2 text-sm font-medium text-[#4F5B72]">
+                {{ currentPage }} / {{ totalPages }}
+            </span>
+
+            <button
+                type="button"
+                class="rounded-full border border-[#E6D8C4] bg-white px-4 py-2 text-sm font-semibold text-[#4F5B72] disabled:opacity-50"
+                :disabled="currentPage === totalPages"
+                @click="changePage(currentPage + 1)"
+            >
+                다음
+            </button>
         </div>
     </section>
 </template>
