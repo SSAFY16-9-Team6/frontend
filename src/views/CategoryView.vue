@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import PlaceCard from '../components/PlaceCard.vue'
+import { PLACES } from '../data/constants'
 </script>
 
 <template>
