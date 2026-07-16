@@ -1,9 +1,12 @@
 <script setup lang="ts">
-
-defineProps<{
+const props = defineProps<{
+  modelValue?: string
   placeholder?: string
 }>()
 
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
 </script>
 
 <template>
@@ -31,16 +34,14 @@ defineProps<{
       <!-- 인풋 영역 -->
       <input
         type="text"
-        :value="modelValue"
-        @input="modelValue = ($event.target as HTMLInputElement).value"
-        :placeholder="placeholder || '검색어를 입력해주세요'"
-        class="h-full w-full bg-transparent text-sm font-medium text-[#0F1F4B] outline-none placeholder:text-[#8A95A5] placeholder:font-normal"
+        :value="props.modelValue"
+        @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+        :placeholder="props.placeholder || '검색어를 입력해주세요'"
       />
 
       <!-- 글자 입력 시 활성화되는 지우기(X) 버튼 (선택 사항) -->
-      <button 
-        v-if="modelValue"
-        @click="modelValue = ''"
+      <button v-if="props.modelValue" 
+        @click="emit('update:modelValue', '')"
         type="button"
         class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#F5F0E6] text-[#4F5B72] hover:bg-[#E6D8C4] hover:text-[#0F1F4B] transition-colors"
       >
