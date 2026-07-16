@@ -40,7 +40,8 @@ const routes = [
     path: '/board/edit/:id',
     name: 'post-edit',
     component: BoardUpdateView,
-    props: true
+    props: true,
+    meta: { requiresEditAuth: true }
   },
   {
     path: '/board/create',
@@ -57,6 +58,19 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
+})
+
+router.beforeEach((to, _from, next) => {
+  if (to.meta.requiresEditAuth) {
+    const canEdit = sessionStorage.getItem('canEdit')
+    if (canEdit === 'true') {
+      next()
+      return
+    }
+    next({ name: 'board' })
+    return
+  }
+  next()
 })
 
 export default router

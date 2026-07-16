@@ -162,6 +162,7 @@ const handleSubmit = async () => {
     )
   } finally {
     isSubmitting.value = false
+    sessionStorage.removeItem('canEdit')
   }
 }
 

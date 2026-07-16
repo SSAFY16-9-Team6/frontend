@@ -196,6 +196,14 @@ const handlePasswordSubmit = async () => {
             passwordError.value = verifyResult?.message || '비밀번호가 일치하지 않습니다.'
             return
         }
+
+        if (modalMode.value === 'edit') {
+            sessionStorage.setItem('canEdit', 'true')
+            closePasswordModal()
+            router.push({ name: 'post-edit', params: { id: post.value.postId } })
+            return
+        }
+
         const deleteResponse = await fetch(
             `https://backend-xxf5.onrender.com/api/v1/posts/${post.value.postId}`,
             {

@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { CATEGORIES, DISTRICTS } from '../data/constants.ts'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { CATEGORIES } from '../data/constants.ts'
 
 const isMounted = ref(false)
-const router = useRouter()
 
 const categoryTotals = ref<Record<string, number>>({})
 const statsError = ref('')
@@ -47,11 +45,14 @@ const fetchCategoryStats = async () => {
                 : '통계 데이터를 불러오지 못했습니다.'
     } finally {
         isStatsLoading.value = false
+        await nextTick()
+        requestAnimationFrame(() => {
+        isMounted.value = true
+        })
     }
 }
 
 onMounted(() => {
-    isMounted.value = true
     fetchCategoryStats()
 })
 
