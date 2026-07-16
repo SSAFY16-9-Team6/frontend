@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { PLACES } from '../data/mockData'
 import PlaceCard from '../components/PlaceCard.vue'
 </script>
 

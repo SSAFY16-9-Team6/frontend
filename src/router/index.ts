@@ -7,6 +7,7 @@ import BoardUpdateView from '../views/BoardUpdateView.vue'
 import BoardCreateView from '../views/BoardCreateView.vue'
 import TourismView from '../views/TourismView.vue'
 import MapView from '../views/MapView.vue'
+import StatsView from '../views/StatsView.vue'
 
 const routes = [
   {
@@ -45,6 +46,11 @@ const routes = [
     path: '/board/create',
     name: 'board-create',
     component: BoardCreateView
+  },
+  {
+    path: '/stats',
+    name: 'stats',
+    component: StatsView
   }
 ]
 

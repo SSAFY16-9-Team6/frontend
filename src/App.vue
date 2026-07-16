@@ -17,6 +17,8 @@ function onChangeTab(tabKey: string) {
         router.push('/map')
     } else if (tabKey === 'board') {
         router.push('/board')
+    } else if (tabKey === 'stats') {
+        router.push('/stats')
     } else {
         // 통계 등 준비중인 탭의 경우
         console.log(`${tabKey} 페이지는 준비 중입니다.`)
