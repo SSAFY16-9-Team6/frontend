@@ -1,5 +1,5 @@
 // src/data/mock.ts
-import type { Place, Post, ChatMsg } from '../types'
+import type { Place, Post } from '../types'
 
 export const PLACES: Place[] = [
     {

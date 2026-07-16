@@ -15,11 +15,6 @@ const errorMessage = ref('')
 // 스크롤 이동을 위해 리스트의 각 아이템 요소를 참조할 객체
 const placeElements = ref<Record<string, HTMLElement | null>>({})
 
-const selectedCategoryName = computed(() => {
-  if (selectedCategoryId.value === 'all') return '전체'
-  return CATEGORIES.find((cat) => cat.id === selectedCategoryId.value)?.name ?? '전체'
-})
-
 const filteredPlaces = computed(() => {
   let result = allPlaces.value
 

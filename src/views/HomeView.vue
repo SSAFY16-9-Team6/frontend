@@ -3,9 +3,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { CATEGORIES } from '../data/constants'
-import { FEATURED_PLACES, EVENTS } from '../data/mockData'
-import PlaceCard from '../components/PlaceCard.vue'
-import Chatbot from '../components/Chatbot.vue'
 
 const router = useRouter()
 
@@ -93,9 +90,7 @@ const categoryList = CATEGORIES.map(cat => {
     description: detail?.description || '부산의 다양한 핫플레이스',
     count: detail?.count || 0,
     bgImage: bgImg,
-    bgClass: detail?.bgClass || 'bg-[#F9F1E5]',
     textColor: detail?.textColor || 'text-[#FF4D2D]',
-    iconColor: detail?.iconColor || 'text-[#0F1F4B]',
     iconBg: detail?.iconBg || 'bg-gray-100',
     svgPath
   }
