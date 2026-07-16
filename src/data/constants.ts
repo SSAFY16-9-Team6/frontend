@@ -23,6 +23,24 @@ export const DISTRICTS = [
   { code: '380', name: '사하구' },
 ]
 
+export const DISTRICTS_WEATHER_GRIDS: Record<string, { nx: number; ny: number }> = {
+  '중구': { nx: 97, ny: 74 },
+  '서구': { nx: 97, ny: 74 },
+  '동구': { nx: 98, ny: 75 },
+  '영도구': { nx: 98, ny: 74 },
+  '부산진구': { nx: 97, ny: 75 },
+  '동래구': { nx: 98, ny: 76 },
+  '남구': { nx: 98, ny: 75 },
+  '북구': { nx: 96, ny: 76 },
+  '해운대구': { nx: 99, ny: 75 },
+  '사하구': { nx: 96, ny: 74 },
+  '금정구': { nx: 98, ny: 77 },
+  '강서구': { nx: 96, ny: 76 },
+  '연제구': { nx: 98, ny: 76 },
+  '수영구': { nx: 99, ny: 75 },
+  '사상구': { nx: 96, ny: 75 },
+  '기장군': { nx: 100, ny: 77 }
+}
 
 export const img = (name: string) => `https://images.unsplash.com/${name}?auto=format&fit=crop&w=900&q=80`
 
