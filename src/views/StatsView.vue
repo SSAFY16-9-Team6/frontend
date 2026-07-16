@@ -8,6 +8,7 @@ const categoryTotals = ref<Record<string, number>>({})
 const statsError = ref('')
 const isStatsLoading = ref(false)
 
+// API를 통해 실제 등록된 "게시글 개수" 로드
 const fetchCategoryStats = async () => {
     isStatsLoading.value = true
     statsError.value = ''
@@ -47,7 +48,7 @@ const fetchCategoryStats = async () => {
         isStatsLoading.value = false
         await nextTick()
         requestAnimationFrame(() => {
-        isMounted.value = true
+            isMounted.value = true
         })
     }
 }
@@ -56,6 +57,7 @@ onMounted(() => {
     fetchCategoryStats()
 })
 
+// 1. [원형 차트용] constants.ts에 기재된 카테고리별 고유 데이터 개수(total) 매핑
 const mappedCategoryData = computed(() => {
     return CATEGORIES.map((category) => {
         let hexColor = '#0F1F4B'
@@ -67,7 +69,7 @@ const mappedCategoryData = computed(() => {
         return {
             id: category.id,
             name: category.name,
-            count: categoryTotals.value[category.id] ?? 0,
+            count: category.total ?? 0, // 게시글 개수 대신 constants의 total 값 사용
             color: hexColor,
         }
     })
@@ -104,8 +106,27 @@ const topThreeCategories = computed(() => {
     return [...mappedCategoryData.value].sort((a, b) => b.count - a.count).slice(0, 2)
 })
 
+
+// 2. [막대 그래프용] API 응답 데이터(실제 게시글 개수) 기반 매핑 데이터 생성
+const postsCategoryData = computed(() => {
+    return CATEGORIES.map((category) => {
+        let hexColor = '#0F1F4B'
+        if (category.color) {
+            const matchHex = category.color.match(/#([A-Fa-f0-9]{6})/)
+            if (matchHex) hexColor = `#${matchHex[1]}`
+        }
+
+        return {
+            id: category.id,
+            name: category.name,
+            count: categoryTotals.value[category.id] ?? 0, // 실제 API 게시글 수
+            color: hexColor,
+        }
+    })
+})
+
 const maxCategoryCount = computed(() => {
-    const counts = mappedCategoryData.value.map((c) => c.count)
+    const counts = postsCategoryData.value.map((c) => c.count)
     return Math.max(...counts, 1)
 })
 
@@ -134,6 +155,7 @@ const yAxisValues = computed(() => {
             </div>
 
             <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- 좌측: 카테고리별 명소 분포 (원형 차트 - constants 데이터 기반) -->
                 <div class="rounded-[24px] bg-white p-8 border border-[#F5F0E6] shadow-sm flex flex-col justify-between gap-6">
                     <div>
                         <h3 class="text-lg font-bold text-[#0F1F4B]">카테고리별 명소 분포</h3>
@@ -166,7 +188,7 @@ const yAxisValues = computed(() => {
                                 </svg>
                                 <div class="absolute inset-0 flex flex-col items-center justify-center">
                                     <span class="text-2xl font-bold text-[#0F1F4B]">{{ totalCount }}</span>
-                                    <span class="text-[10px] text-[#8A866F] uppercase tracking-wider">총 게시글</span>
+                                    <span class="text-[10px] text-[#8A866F] uppercase tracking-wider">총 명소 수</span>
                                 </div>
                             </div>
 
@@ -193,7 +215,7 @@ const yAxisValues = computed(() => {
                         v-if="topThreeCategories.length >= 2"
                         class="rounded-xl bg-[#FAF9F6] p-4 text-xs text-[#8A866F] leading-relaxed"
                     >
-                        분석 결과 현재 여행 정보 데이터베이스는
+                        분석 결과 전체 명소 데이터베이스는
                         <strong :style="{ color: topThreeCategories[0].color }">{{ topThreeCategories[0].name }}</strong>,
                         <strong :style="{ color: topThreeCategories[1].color }">
                             {{ topThreeCategories[1].name }}
@@ -202,10 +224,11 @@ const yAxisValues = computed(() => {
                     </div>
                 </div>
 
+                <!-- 우측: 카테고리별 게시글 현황 (막대 그래프 - API 데이터 기반) -->
                 <div class="rounded-[24px] bg-white p-8 border border-[#F5F0E6] shadow-sm flex flex-col justify-between">
                     <div>
                         <h3 class="text-lg font-bold text-[#0F1F4B]">카테고리별 게시글 현황</h3>
-                        <p class="text-xs text-[#8A866F] mt-0.5">CATEGORIES별 게시글 수</p>
+                        <p class="text-xs text-[#8A866F] mt-0.5">실제 등록된 카테고리별 게시글 수</p>
                     </div>
 
                     <div class="my-8 flex gap-4">
@@ -216,7 +239,7 @@ const yAxisValues = computed(() => {
                         </div>
                         <div class="flex-1 flex items-end justify-around h-64 border-b border-[#F5F0E6] pb-2 px-2 gap-2">
                             <div
-                                v-for="item in mappedCategoryData"
+                                v-for="item in postsCategoryData"
                                 :key="item.id"
                                 class="flex flex-col items-center flex-1 h-full group"
                             >
@@ -240,7 +263,7 @@ const yAxisValues = computed(() => {
 
                     <div class="flex justify-around px-2 gap-2 text-center">
                         <div
-                            v-for="item in mappedCategoryData"
+                            v-for="item in postsCategoryData"
                             :key="item.id"
                             class="flex-1 flex flex-col items-center gap-1 min-w-0"
                         >
