@@ -5,7 +5,7 @@ import { CATEGORIES, DISTRICTS, DISTRICTS_WEATHER_GRIDS } from '../data/constant
 import type { Place } from '../types'
 import NaverMap from '../components/NaverMap.vue'
 
-const selectedCategoryId = ref('all')
+const selectedCategoryId = ref(CATEGORIES[0]?.id ?? '12')
 const selectedDistrict = ref('all')
 const activePlaceId = ref<string | null>(null)
 const allPlaces = ref<Place[]>([])
@@ -14,45 +14,31 @@ const errorMessage = ref('')
 
 // === 날씨 관련 상태 변수 ===
 interface HourlyForecast {
-  time: string       // 예보 시각 (예: "14:00")
-  temp: string       // 기온 (예: "25°C")
-  statusText: string // 날씨 상태 텍스트
-  statusCode: string // 날씨 상태 코드
+  time: string
+  temp: string
+  statusText: string
+  statusCode: string
 }
 
 interface WeatherInfo {
   district: string
-  temp: string // 현재 기온
-  statusText: string // 현재 날씨 상태 텍스트
-  statusCode: string // 현재 날씨 상태 코드
-  hourly: HourlyForecast[] // 향후 6시간 예보 데이터
+  temp: string
+  statusText: string
+  statusCode: string
+  hourly: HourlyForecast[]
 }
 
 const weatherList = ref<WeatherInfo[]>([])
 const isWeatherLoading = ref(false)
 
-// 현재 선택된 지역구의 날씨 정보를 가져오기 위한 computed
 const activeDistrictWeather = computed(() => {
   if (selectedDistrict.value === 'all') return null
-  return weatherList.value.find(w => w.district === selectedDistrict.value) || null
+  return weatherList.value.find((w) => w.district === selectedDistrict.value) || null
 })
 
-// 스크롤 이동을 위해 리스트의 각 아이템 요소를 참조할 객체
 const placeElements = ref<Record<string, HTMLElement | null>>({})
 
-const filteredPlaces = computed(() => {
-  let result = allPlaces.value
-
-  if (selectedCategoryId.value !== 'all') {
-    result = result.filter((place) => place.categoryId === selectedCategoryId.value)
-  }
-
-  if (selectedDistrict.value !== 'all') {
-    result = result.filter((place) => place.region === selectedDistrict.value)
-  }
-
-  return result
-})
+const filteredPlaces = computed(() => allPlaces.value)
 
 const activePlace = computed(() => {
   return allPlaces.value.find((place) => place.id === activePlaceId.value) || null
@@ -72,7 +58,7 @@ function getCategorySvgPath(categoryName: string): string {
   } else if (categoryId === '14') {
     return 'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'
   } else if (categoryId === '15') {
-    return 'M9 18V5l12-2v13 M9 10l12-2 M9 21a3 3 0 1 1-6-0 3 3 0 0 1 6 0z M21 19a3 3 0 1 1-6-0 3 3 0 0 1 6 0z'
+    return 'M9 18V5l12-2v13 M9 10l12-2 M9 21a3 3 0 1 1 6 0 3 3 0 0 1-6 0z M21 19a3 3 0 1 1-6 0 3 3 0 0 1 6 0z'
   } else if (categoryId === '25') {
     return 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36z'
   } else if (categoryId === '28') {
@@ -96,8 +82,12 @@ function getImageUrl(image: string | undefined): string {
     : `https://images.unsplash.com/${image}?auto=format&fit=crop&w=300&q=80`
 }
 
+function getRegionCodeFromDistrict(district: string) {
+  return DISTRICTS.find((item) => item.name === district)?.code
+}
+
 function mapPlace(item: any, categoryId: string): Place {
-  const categoryName = CATEGORIES.find((cat) => cat.name === categoryId)?.name ?? '기타'
+  const categoryName = CATEGORIES.find((cat) => cat.id === categoryId)?.name ?? '기타'
   const region = DISTRICTS.find((district) => district.code === item.lDongSignguCd)?.name ?? '기타'
 
   return {
@@ -114,38 +104,26 @@ function mapPlace(item: any, categoryId: string): Place {
   }
 }
 
-async function loadPlaces() {
+async function loadPlaces(categoryId = selectedCategoryId.value, regionCode?: string) {
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    const categoryResults = await Promise.all(
-      CATEGORIES.map(async (category) => {
-        const allItems: any[] = []
-        let page = 1
-        let hasMore = true
+    const params = new URLSearchParams()
+    params.append('page', '1')
+    params.append('size', '100')
+    if (regionCode) params.append('regionCode', regionCode)
 
-        while (hasMore) {
-          const response = await fetch(`https://backend-xxf5.onrender.com/api/v1/categories/${category.id}/places?page=${page}&size=100`)
-          if (!response.ok) {
-            throw new Error(`${category.name} 데이터를 불러오지 못했습니다.`)
-          }
-
-          const result = await response.json()
-          const items = result?.data?.items ?? []
-          allItems.push(...items)
-
-          const totalCount = result?.data?.totalCount ?? 0
-          const currentCount = allItems.length
-          hasMore = currentCount < totalCount && items.length > 0
-          page += 1
-        }
-
-        return allItems.map((item: any) => mapPlace(item, category.id))
-      })
+    const response = await fetch(
+      `https://backend-xxf5.onrender.com/api/v1/categories/${categoryId}/places?${params.toString()}`
     )
+    if (!response.ok) {
+      throw new Error('관광지 데이터를 불러오지 못했습니다.')
+    }
 
-    allPlaces.value = categoryResults.flat()
+    const result = await response.json()
+    const items = result?.data?.items ?? []
+    allPlaces.value = items.map((item: any) => mapPlace(item, categoryId))
   } catch (error) {
     console.error(error)
     errorMessage.value = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
@@ -154,24 +132,23 @@ async function loadPlaces() {
   }
 }
 
-function selectWeatherDistrict(districtName: string) {
-  if (selectedDistrict.value === districtName) {
-    selectedDistrict.value = 'all'
-  } else {
-    selectedDistrict.value = districtName
-  }
-  activePlaceId.value = null
-}
-
-// 왼쪽 날씨 패널 탭 클릭 및 하단 필터 연동이 자연스럽게 맞물리도록 가드 구성
 function selectDistrictFilter(districtName: string) {
   selectedDistrict.value = districtName
   activePlaceId.value = null
+
+  const regionCode = districtName === 'all' ? undefined : getRegionCodeFromDistrict(districtName)
+  loadPlaces(selectedCategoryId.value, regionCode)
 }
 
 function selectCategoryFilter(categoryId: string) {
+  if (selectedCategoryId.value === categoryId) return
+
   selectedCategoryId.value = categoryId
   activePlaceId.value = null
+
+  const regionCode =
+    selectedDistrict.value === 'all' ? undefined : getRegionCodeFromDistrict(selectedDistrict.value)
+  loadPlaces(categoryId, regionCode)
 }
 
 async function handlePlaceSelect(placeId: string) {
@@ -196,7 +173,7 @@ function getBaseDateTime() {
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const date = String(now.getDate()).padStart(2, '0')
-  
+
   const checkTime = new Date(now.getTime() - 45 * 60 * 1000)
   const hours = String(checkTime.getHours()).padStart(2, '0')
   const minutes = '30'
@@ -217,20 +194,20 @@ function parseWeatherStatus(skyCode: number, ptyCode: number) {
       return { text: '눈', code: 'snowy' }
     }
   }
-  
+
   if (skyCode === 1) return { text: '맑음', code: 'sunny' }
   if (skyCode === 3) return { text: '구름많음', code: 'cloudy-sun' }
   if (skyCode === 4) return { text: '흐림', code: 'cloudy' }
-  
+
   return { text: '정보없음', code: 'unknown' }
 }
 
 async function loadAllDistrictWeather() {
   isWeatherLoading.value = true
-  
+
   const apiKey = import.meta.env.VITE_WEATHER_API_KEY
   const apiBaseUrl = import.meta.env.VITE_WEATHER_API_BASE_URL || 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0'
-  
+
   if (!apiKey) {
     console.warn('.env 파일에 VITE_WEATHER_API_KEY가 등록되어 있지 않습니다.')
     isWeatherLoading.value = false
@@ -238,7 +215,7 @@ async function loadAllDistrictWeather() {
   }
 
   const { baseDate, baseTime } = getBaseDateTime()
-  const districtsToFetch = DISTRICTS.map(d => d.name)
+  const districtsToFetch = DISTRICTS.map((d) => d.name)
 
   try {
     const weatherPromises = districtsToFetch.map(async (districtName) => {
@@ -247,44 +224,41 @@ async function loadAllDistrictWeather() {
         if (!coord) return null
 
         const url = `${apiBaseUrl}/getUltraSrtFcst?serviceKey=${apiKey}&numOfRows=60&pageNo=1&dataType=JSON&base_date=${baseDate}&base_time=${baseTime}&nx=${coord.nx}&ny=${coord.ny}`
-        
+
         const response = await fetch(url)
         if (!response.ok) return null
-        
+
         const json = await response.json()
         const items = json?.response?.body?.items?.item || []
 
         const forecastMap: Record<string, { T1H?: string; SKY?: string; PTY?: string }> = {}
-        
+
         items.forEach((item: any) => {
           const fTime = item.fcstTime
-          if (!forecastMap[fTime]) {
-            forecastMap[fTime] = {}
-          }
+          if (!forecastMap[fTime]) forecastMap[fTime] = {}
           if (item.category === 'T1H') forecastMap[fTime].T1H = item.fcstValue
           if (item.category === 'SKY') forecastMap[fTime].SKY = item.fcstValue
           if (item.category === 'PTY') forecastMap[fTime].PTY = item.fcstValue
         })
 
         const sortedTimes = Object.keys(forecastMap).sort()
-        
-        const hourlyForecasts: HourlyForecast[] = sortedTimes.map(fTime => {
+
+        const hourlyForecasts: HourlyForecast[] = sortedTimes.map((fTime) => {
           const data = forecastMap[fTime]
           const skyVal = parseInt(data.SKY || '1')
           const ptyVal = parseInt(data.PTY || '0')
           const { text, code } = parseWeatherStatus(skyVal, ptyVal)
-          
-          const formattedTime = `${fTime.slice(0, 2)}:${fTime.slice(2)}`
 
           return {
-            time: formattedTime,
+            time: `${fTime.slice(0, 2)}:${fTime.slice(2)}`,
             temp: `${data.T1H || '-'}°C`,
             statusText: text,
             statusCode: code
           }
         })
 
-        const currentForecast = hourlyForecasts[0] || { temp: '-', statusText: '정보없음', statusCode: 'unknown' }
+        const currentForecast =
+          hourlyForecasts[0] || { temp: '-', statusText: '정보없음', statusCode: 'unknown' }
 
         return {
           district: districtName,
@@ -316,27 +290,22 @@ onMounted(() => {
 
 <template>
   <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-    <!-- 타이틀 및 로더 -->
     <div class="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
       <div>
         <span class="text-xs font-semibold text-[#FF4D2D] uppercase tracking-wider">지도</span>
         <h1 class="text-3xl font-black text-[#0F1F4B] mt-1">부산 관광 지도</h1>
       </div>
-      
-      <!-- 날씨 로딩 상태바 -->
       <div v-if="isWeatherLoading" class="text-xs text-[#8A94A6] flex items-center gap-1">
         <svg class="animate-spin h-4 w-4 text-[#FF4D2D]" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
-        실시간 날씨 로드 중...
+        날씨 정보 불러오는 중..
       </div>
     </div>
 
-    <!-- 부산 실시간 날씨 상황판 영역 -->
     <div v-if="weatherList.length > 0" class="mb-8 w-full">
-      <!-- 타이틀 구역 -->
-      <div 
+      <div
         class="text-sm font-black text-[#0F1F4B] mb-3 flex items-center gap-1.5 px-1 select-none cursor-pointer"
         @click="selectedDistrict = 'all'"
       >
@@ -346,14 +315,13 @@ onMounted(() => {
         <span v-if="selectedDistrict === 'all'">부산 실시간 날씨</span>
         <span v-else class="text-base text-[#FF4D2D] hover:underline underline-offset-4">{{ selectedDistrict }} 날씨</span>
       </div>
-      
+
       <div>
-        <!-- 상태 1: 아무 구도 선택하지 않았을 때 (전체 10개 구 나열, 카드 높이를 h-28로 높임) -->
         <div v-if="selectedDistrict === 'all'" class="grid grid-cols-5 sm:grid-cols-10 gap-2 w-full">
-          <div 
-            v-for="weather in weatherList" 
+          <div
+            v-for="weather in weatherList"
             :key="weather.district"
-            @click="selectWeatherDistrict(weather.district)"
+            @click="selectDistrictFilter(weather.district)"
             class="flex flex-col items-center justify-between py-3 px-1 rounded-2xl border text-center transition select-none h-28 cursor-pointer bg-white border-[#E6D8C4]/60 text-[#0F1F4B] hover:border-[#FF4D2D]/50 hover:bg-[#F9F1E5]/10"
           >
             <span class="text-[11px] font-extrabold truncate w-full px-1">{{ weather.district }}</span>
@@ -364,7 +332,6 @@ onMounted(() => {
               </svg>
               <svg v-else-if="weather.statusCode === 'cloudy-sun'" class="w-full h-full stroke-current stroke-[2.2] fill-none" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 10a4 4 0 00-4 4h8a4 4 0 00-4-4z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v2M4.93 4.93l1.41 1.41M19.07 4.93l-1.41 1.41M2 12h2M20 12h2" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20 18.5a3 3 0 00-3-3h-1a4.5 4.5 0 00-9 0h-.5a3.5 3.5 0 000 7h13.5a3 3 0 000-6z" />
               </svg>
               <svg v-else-if="weather.statusCode === 'cloudy'" class="w-full h-full stroke-current stroke-[2.2] fill-none" viewBox="0 0 24 24">
@@ -391,10 +358,9 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- 상태 2: 특정 구를 클릭했을 때 (앞의 현재 카드를 제외하고 시간대별 예보 카드 6개만 정렬, 카드 높이를 h-28로 높임) -->
         <div v-else-if="activeDistrictWeather" class="grid grid-cols-3 sm:grid-cols-6 gap-2 w-full">
-          <div 
-            v-for="fcst in activeDistrictWeather.hourly" 
+          <div
+            v-for="fcst in activeDistrictWeather.hourly"
             :key="fcst.time"
             class="flex flex-col items-center justify-between py-3 px-1 rounded-2xl border text-center select-none h-28 bg-white border-[#E6D8C4]/60 text-[#0F1F4B]"
           >
@@ -430,22 +396,19 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 필터 컨트롤 영역 -->
     <div class="flex flex-col gap-5 mb-8 bg-white p-6 rounded-[24px] border border-[#E6D8C4] shadow-sm">
-      
-      <!-- 지역구별 필터 -->
       <div class="flex flex-wrap gap-2 items-center">
         <span class="text-xs font-bold text-[#4F5B72] mr-3 shrink-0">지역구별</span>
-        
+
         <button
           type="button"
           @click="selectDistrictFilter('all')"
-          :class="[
+          :class="[[
             'px-3.5 py-1.5 rounded-full text-xs font-semibold transition border',
             selectedDistrict === 'all'
               ? 'bg-[#FF4D2D] text-white border-[#FF4D2D]'
               : 'bg-white text-[#4F5B72] border-[#E6D8C4] hover:bg-[#F4E7D3]/40'
-          ]"
+          ]]"
         >
           전체
         </button>
@@ -455,12 +418,12 @@ onMounted(() => {
           :key="district.code"
           type="button"
           @click="selectDistrictFilter(district.name)"
-          :class="[
+          :class="[[
             'px-3.5 py-1.5 rounded-full text-xs font-semibold transition border',
             selectedDistrict === district.name
               ? 'bg-[#FF4D2D] text-white border-[#FF4D2D]'
               : 'bg-white text-[#4F5B72] border-[#E6D8C4] hover:bg-[#F4E7D3]/40'
-          ]"
+          ]]"
         >
           {{ district.name }}
         </button>
@@ -468,58 +431,40 @@ onMounted(() => {
 
       <div class="border-t border-[#F4E7D3]/60"></div>
 
-      <!-- 카테고리별 필터 -->
       <div class="flex flex-wrap gap-2 items-center">
         <span class="text-xs font-bold text-[#4F5B72] mr-3 shrink-0">카테고리별</span>
-        
-        <button
-          type="button"
-          @click="selectCategoryFilter('all')"
-          :class="[
-            'px-4 py-2 rounded-full text-xs font-semibold transition border',
-            selectedCategoryId === 'all'
-              ? 'bg-[#0F1F4B] text-white border-[#0F1F4B]'
-              : 'bg-white text-[#4F5B72] border-[#E6D8C4] hover:bg-[#F4E7D3]/40'
-          ]"
-        >
-          전체
-        </button>
 
         <button
           v-for="cat in CATEGORIES"
           :key="cat.id"
           type="button"
           @click="selectCategoryFilter(cat.id)"
-          :class="[
+          :class="[[
             'px-4 py-2 rounded-full text-xs font-semibold transition border',
             selectedCategoryId === cat.id
               ? [cat.color, 'text-white border-transparent']
               : 'bg-white text-[#4F5B72] border-[#E6D8C4] hover:bg-[#F4E7D3]/40'
-          ]"
+          ]]"
         >
           {{ cat.name }}
         </button>
       </div>
-
     </div>
 
-    <!-- 메인 지도/목록 뷰 -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[550px]">
-      <!-- 네이버 지도 영역 -->
       <div class="lg:col-span-2 relative rounded-[32px] overflow-hidden border border-[#E6D8C4] bg-white shadow-sm">
-        <NaverMap 
-          :places="filteredPlaces" 
+        <NaverMap
+          :places="filteredPlaces"
           :active-id="activePlaceId"
-          @marker-click="handlePlaceSelect" 
+          @marker-click="handlePlaceSelect"
         />
       </div>
 
-      <!-- 우측 리스트 영역 -->
       <div class="bg-white rounded-[32px] border border-[#E6D8C4] shadow-sm flex flex-col overflow-hidden">
         <div class="p-5 border-b border-[#F4E7D3] flex justify-between items-center bg-[#F9F1E5]/20">
           <span class="font-bold text-[#0F1F4B]">{{ filteredPlaces.length }}곳 표시됨</span>
         </div>
-        
+
         <div class="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth">
           <div v-if="isLoading" class="h-full flex items-center justify-center text-sm text-[#8A94A6]">
             장소 정보를 불러오는 중입니다...
@@ -536,22 +481,21 @@ onMounted(() => {
             :key="place.id"
             :ref="(el) => { if (el) placeElements[place.id] = el as HTMLElement }"
             @click="handlePlaceSelect(place.id)"
-            :class="[
+            :class="[[
               'p-4 rounded-2xl border transition cursor-pointer flex gap-4 items-center',
-              activePlaceId === place.id 
-                ? 'border-[#FF4D2D] bg-[#FF4D2D]/5 shadow-sm' 
+              activePlaceId === place.id
+                ? 'border-[#FF4D2D] bg-[#FF4D2D]/5 shadow-sm'
                 : 'border-[#E6D8C4]/60 hover:border-[#0F1F4B]/50 bg-white'
-            ]"
+            ]]"
           >
-            <!-- 리스트 항목 아이콘 -->
-            <div 
-              :class="[
+            <div
+              :class="[[
                 'w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm border border-white/20',
                 getCategoryColorClass(place.category)
-              ]"
+              ]]"
             >
-              <svg 
-                class="w-5 h-5 fill-none stroke-current stroke-[2.3]" 
+              <svg
+                class="w-5 h-5 fill-none stroke-current stroke-[2.3]"
                 viewBox="0 0 24 24"
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -574,14 +518,13 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 하단 선택 장소 상세 정보 카드 -->
     <transition name="fade-slide">
-      <div 
-        v-if="activePlace" 
+      <div
+        v-if="activePlace"
         class="mt-6 bg-white rounded-[24px] border border-[#E6D8C4] p-6 shadow-md relative flex gap-6 items-center"
       >
-        <button 
-          @click="closeDetailCard" 
+        <button
+          @click="closeDetailCard"
           class="absolute top-4 right-4 text-[#8A94A6] hover:text-[#0F1F4B] transition p-1"
           aria-label="닫기"
         >
@@ -591,7 +534,7 @@ onMounted(() => {
         </button>
 
         <div class="w-28 h-28 rounded-2xl overflow-hidden shrink-0 bg-[#F9F1E5] border border-[#E6D8C4]/40">
-          <img 
+          <img
             :src="getImageUrl(activePlace.image)"
             :alt="activePlace.name"
             class="w-full h-full object-cover"
@@ -606,7 +549,7 @@ onMounted(() => {
             <span class="text-xs font-semibold text-[#8A94A6]">{{ activePlace.category }}</span>
           </div>
           <h2 class="text-2xl font-black text-[#0F1F4B] truncate mt-1.5">{{ activePlace.name }}</h2>
-          
+
           <div class="flex items-center gap-1.5 text-sm text-[#4F5B72] mt-2 font-semibold">
             <svg class="w-4 h-4 text-[#FF4D2D] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -616,9 +559,9 @@ onMounted(() => {
           </div>
 
           <div class="mt-2.5 pl-5.5">
-            <a 
-              :href="`https://map.naver.com/v5/search/${encodeURIComponent(activePlace.name)}`" 
-              target="_blank" 
+            <a
+              :href="`https://map.naver.com/v5/search/${encodeURIComponent(activePlace.name)}`"
+              target="_blank"
               rel="noopener noreferrer"
               class="inline-flex items-center gap-1 text-xs font-bold text-[#FF4D2D] hover:text-[#E03D1E] transition-colors underline underline-offset-4"
             >
