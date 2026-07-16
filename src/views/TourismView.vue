@@ -9,7 +9,7 @@ import type { Place } from '../types'
 
 const route = useRoute()
 
-const districts = ['전체', ...DISTRICTS.map((district) => district.name)]
+// 지역구 선택 상태 ('전체' 또는 각 지역구 이름)
 const selectedDistrict = ref('전체')
 
 // URL 쿼리에 category가 있으면 그것을 사용하고, 없으면 카테고리의 첫 번째 ID를 사용
@@ -31,21 +31,20 @@ const categoryName = computed(() => {
   return CATEGORIES.find((cat) => cat.id === selectedCategoryId.value)?.name ?? '관광지'
 })
 
-const totalCount = ref(0)
+// 한 페이지당 보여줄 장소 개수 (클라이언트 사이드 페이지네이션용)
 const pageSize = 20
 const currentPage = ref(1)
-const totalPages = ref(1)
 
 // 각 카테고리 ID별 최적화된 고화질 이미지 매핑 객체
 const categoryImages: Record<string, string> = {
-  '12': 'https://images.unsplash.com/photo-1546874177-9e664107314e?auto=format&fit=crop&w=1600&q=80', // 관광지 (부산 바다 감성)
-  '14': 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1600&q=80', // 문화시설 (도서관/전시)
-  '15': 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=80', // 축제공연행사 (페스티벌 콘서트)
-  '25': 'https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?auto=format&fit=crop&w=1600&q=80', // 여행코스 (지도/드라이브)
-  '28': 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1600&q=80', // 레포츠 (바다 서핑)
-  '32': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80', // 숙박 (호텔/펜션)
-  '38': 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80', // 쇼핑 (쇼핑거리)
-  '39': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1600&q=80', // 음식점 (식당/요리)
+  '12': 'https://images.unsplash.com/photo-1546874177-9e664107314e?auto=format&fit=crop&w=1600&q=80',
+  '14': 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1600&q=80',
+  '15': 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=80',
+  '25': 'https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?auto=format&fit=crop&w=1600&q=80',
+  '28': 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1600&q=80',
+  '32': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80',
+  '38': 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80',
+  '39': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1600&q=80',
 }
 
 // 선택된 카테고리에 맞는 이미지를 가져오는 computed
@@ -69,24 +68,37 @@ function mapPlace(item: any): Place {
   }
 }
 
+// ★ 지도 코드(MapView.vue)의 데이터를 전부(hasMore가 끝날 때까지) 긁어오는 완전 탐색 알고리즘 이식
 async function loadPlaces() {
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    const response = await fetch(
-      `https://backend-xxf5.onrender.com/api/v1/categories/${selectedCategoryId.value}/places?page=${currentPage.value}&size=${pageSize}`
-    )
-    if (!response.ok) {
-      throw new Error('관광지 데이터를 불러오지 못했습니다.')
+    const allItems: any[] = []
+    let page = 1
+    let hasMore = true
+
+    while (hasMore) {
+      const response = await fetch(
+        `https://backend-xxf5.onrender.com/api/v1/categories/${selectedCategoryId.value}/places?page=${page}&size=100`
+      )
+      if (!response.ok) {
+        throw new Error(`${categoryName.value} 데이터를 불러오지 못했습니다.`)
+      }
+
+      const result = await response.json()
+      const items = result?.data?.items ?? []
+      allItems.push(...items)
+
+      const totalCount = result?.data?.totalCount ?? 0
+      const currentCount = allItems.length
+      
+      // 더 불러올 데이터가 남았는지 지도 로직과 동일하게 점검
+      hasMore = currentCount < totalCount && items.length > 0
+      page += 1
     }
 
-    const result = await response.json()
-    const items = result?.data?.items ?? []
-
-    places.value = items.map(mapPlace)
-    totalCount.value = result?.data?.totalCount ?? items.length
-    totalPages.value = Math.max(1, Math.ceil(totalCount.value / pageSize))
+    places.value = allItems.map(mapPlace)
   } catch (error) {
     console.error(error)
     errorMessage.value = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
@@ -109,13 +121,33 @@ watch(
   }
 )
 
-const maxVisiblePages = 7
-
-const filteredPlaces = computed(() => {
-  if (selectedDistrict.value === '전체') return places.value
+// ★ 2차 필터링: 불러온 '전체 누적 데이터' 중 선택한 지역구에 해당하는 데이터만 실시간 필터링
+const allFilteredPlaces = computed(() => {
+  if (selectedDistrict.value === '전체') {
+    return places.value
+  }
   return places.value.filter((place) => place.region === selectedDistrict.value)
 })
 
+// ★ 상단 배너에 표시될 필터링된 총 개수
+const totalCount = computed(() => {
+  return allFilteredPlaces.value.length
+})
+
+// ★ 필터링된 결과물 개수에 따라 전체 페이지 수 유동적 계산
+const totalPages = computed(() => {
+  return Math.max(1, Math.ceil(allFilteredPlaces.value.length / pageSize))
+})
+
+// ★ 현재 페이지에 해당하는 20개의 항목만 리스트 슬라이싱하여 노출
+const filteredPlaces = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  const end = start + pageSize
+  return allFilteredPlaces.value.slice(start, end)
+})
+
+// 페이지네이션 가시범위 계산
+const maxVisiblePages = 7
 const visiblePages = computed(() => {
   const total = totalPages.value
   const current = currentPage.value
@@ -145,6 +177,7 @@ function selectCategory(categoryId: string) {
   loadPlaces()
 }
 
+// 지역구를 선택했을 때 currentPage를 1페이지로 리셋
 function selectDistrict(district: string) {
   selectedDistrict.value = district
   currentPage.value = 1
@@ -153,7 +186,6 @@ function selectDistrict(district: string) {
 function changePage(page: number) {
   if (page < 1 || page > totalPages.value || page === currentPage.value) return
   currentPage.value = page
-  loadPlaces()
 }
 
 onMounted(() => {
@@ -211,17 +243,29 @@ onMounted(() => {
 
     <!-- District Filter Tags -->
     <div class="flex flex-wrap gap-2.5 py-1">
+      <!-- 전체 버튼 -->
       <button
-        v-for="district in districts"
-        :key="district"
         type="button"
         class="px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200"
-        :class="selectedDistrict === district 
+        :class="selectedDistrict === '전체' 
           ? 'bg-[#FF4D2D] text-white shadow-md shadow-[#FF4D2D]/10 hover:bg-[#E03D1E]' 
           : 'bg-white text-[#4F5B72] hover:bg-[#F4E7D3]/40 border border-[#E6D8C4]/60'"
-        @click="selectDistrict(district)"
+        @click="selectDistrict('전체')"
       >
-        {{ district }}
+        전체
+      </button>
+      <!-- 개별 지역구 버튼들 -->
+      <button
+        v-for="district in DISTRICTS"
+        :key="district.code"
+        type="button"
+        class="px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200"
+        :class="selectedDistrict === district.name 
+          ? 'bg-[#FF4D2D] text-white shadow-md shadow-[#FF4D2D]/10 hover:bg-[#E03D1E]' 
+          : 'bg-white text-[#4F5B72] hover:bg-[#F4E7D3]/40 border border-[#E6D8C4]/60'"
+        @click="selectDistrict(district.name)"
+      >
+        {{ district.name }}
       </button>
     </div>
 
@@ -239,6 +283,7 @@ onMounted(() => {
         <PlaceCard v-for="place in filteredPlaces" :key="place.id" :place="place" />
       </div>
 
+      <!-- Pagination -->
       <div v-if="totalPages > 1" class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 pt-2">
         <button
           type="button"
