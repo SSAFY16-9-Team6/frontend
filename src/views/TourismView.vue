@@ -69,13 +69,23 @@ function mapPlace(item: any): Place {
   }
 }
 
-async function loadPlaces() {
+const getRegionCodeFromDistrict = (district: string) =>
+  DISTRICTS.find((item) => item.name === district)?.code
+
+async function loadPlaces(categoryId = selectedCategoryId.value, regionCode?: string) {
   isLoading.value = true
   errorMessage.value = ''
 
   try {
+    const params = new URLSearchParams()
+    params.append('page', String(currentPage.value))
+    params.append('size', String(pageSize))
+    if (regionCode) {
+      params.append('regionCode', regionCode)
+    }
+
     const response = await fetch(
-      `https://backend-xxf5.onrender.com/api/v1/categories/${selectedCategoryId.value}/places?page=${currentPage.value}&size=${pageSize}`
+      `https://backend-xxf5.onrender.com/api/v1/categories/${categoryId}/places?${params.toString()}`
     )
     if (!response.ok) {
       throw new Error('관광지 데이터를 불러오지 못했습니다.')
@@ -95,6 +105,33 @@ async function loadPlaces() {
   }
 }
 
+function selectCategory(categoryId: string) {
+  if (selectedCategoryId.value === categoryId) return
+
+  selectedCategoryId.value = categoryId
+  selectedDistrict.value = '전체'
+  currentPage.value = 1
+  loadPlaces(categoryId)
+}
+
+function selectDistrict(district: string) {
+  if (selectedDistrict.value === district) return
+
+  selectedDistrict.value = district
+  currentPage.value = 1
+
+  const regionCode = district === '전체' ? undefined : getRegionCodeFromDistrict(district)
+  loadPlaces(selectedCategoryId.value, regionCode)
+}
+
+function changePage(page: number) {
+  if (page < 1 || page > totalPages.value || page === currentPage.value) return
+
+  currentPage.value = page
+  const regionCode = selectedDistrict.value === '전체' ? undefined : getRegionCodeFromDistrict(selectedDistrict.value)
+  loadPlaces(selectedCategoryId.value, regionCode)
+}
+
 // 홈화면에서 다른 카테고리를 눌렀을 때를 대비해 라우터 파라미터 변화 감지
 watch(
   () => route.query.category,
@@ -104,17 +141,12 @@ watch(
       selectedCategoryId.value = targetCategory
       selectedDistrict.value = '전체'
       currentPage.value = 1
-      loadPlaces()
+      loadPlaces(targetCategory)
     }
   }
 )
 
 const maxVisiblePages = 7
-
-const filteredPlaces = computed(() => {
-  if (selectedDistrict.value === '전체') return places.value
-  return places.value.filter((place) => place.region === selectedDistrict.value)
-})
 
 const visiblePages = computed(() => {
   const total = totalPages.value
@@ -137,25 +169,6 @@ const visiblePages = computed(() => {
   return Array.from({ length: end - start + 1 }, (_, index) => start + index)
 })
 
-function selectCategory(categoryId: string) {
-  if (selectedCategoryId.value === categoryId) return
-  selectedCategoryId.value = categoryId
-  selectedDistrict.value = '전체'
-  currentPage.value = 1
-  loadPlaces()
-}
-
-function selectDistrict(district: string) {
-  selectedDistrict.value = district
-  currentPage.value = 1
-}
-
-function changePage(page: number) {
-  if (page < 1 || page > totalPages.value || page === currentPage.value) return
-  currentPage.value = page
-  loadPlaces()
-}
-
 onMounted(() => {
   loadPlaces()
 })
@@ -174,9 +187,9 @@ onMounted(() => {
 
     <!-- Hero Banner -->
     <div class="relative rounded-[32px] overflow-hidden h-[240px] shadow-sm">
-      <img 
-        :src="currentBannerImage" 
-        :alt="categoryName" 
+      <img
+        :src="currentBannerImage"
+        :alt="categoryName"
         class="absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-in-out"
       />
       <div class="absolute inset-0 bg-gradient-to-r from-black/65 via-black/45 to-transparent flex flex-col justify-end p-8 sm:p-10">
@@ -216,8 +229,8 @@ onMounted(() => {
         :key="district"
         type="button"
         class="px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200"
-        :class="selectedDistrict === district 
-          ? 'bg-[#FF4D2D] text-white shadow-md shadow-[#FF4D2D]/10 hover:bg-[#E03D1E]' 
+        :class="selectedDistrict === district
+          ? 'bg-[#FF4D2D] text-white shadow-md shadow-[#FF4D2D]/10 hover:bg-[#E03D1E]'
           : 'bg-white text-[#4F5B72] hover:bg-[#F4E7D3]/40 border border-[#E6D8C4]/60'"
         @click="selectDistrict(district)"
       >
@@ -233,10 +246,10 @@ onMounted(() => {
       <p class="font-medium">{{ errorMessage }}</p>
     </div>
 
-    <template v-else-if="filteredPlaces.length > 0">
+    <template v-else-if="places.length > 0">
       <!-- Places Grid -->
       <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <PlaceCard v-for="place in filteredPlaces" :key="place.id" :place="place" />
+        <PlaceCard v-for="place in places" :key="place.id" :place="place" />
       </div>
 
       <div v-if="totalPages > 1" class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 pt-2">

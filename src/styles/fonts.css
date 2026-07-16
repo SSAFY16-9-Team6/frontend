@@ -14,3 +14,11 @@
 
 /* 5. 싱글데이 (Single Day - 부드럽고 가벼운 감성의 여행/일상 타이틀 서체) */
 @import url('https://fonts.googleapis.com/css2?family=Single+Day&display=swap');
+
+@font-face {
+  font-family: 'Busan';
+  src: url('//cdn.jsdelivr.net/korean-webfonts/1/orgs/govs/busan/Busan/Busan.woff2') format('woff2'),
+       url('//cdn.jsdelivr.net/korean-webfonts/1/orgs/govs/busan/Busan/Busan.woff') format('woff');
+  font-weight: 400;
+  font-display: swap;
+}
